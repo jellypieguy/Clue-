@@ -21,7 +21,7 @@ public class DiceRoller : MonoBehaviour
 
     }
 
-    /// grace
+    /// 
     /// 
     /// 
     public void RollDice()
