@@ -3,35 +3,43 @@ using System.IO;
 
 public class GameDataLoader : MonoBehaviour
 {
-    // this class reads game_data.json and stores everything
-
     public GameData LoadedData { get; private set; }
 
     public void LoadGameData()
     {
         string filePath = Path.Combine(Application.streamingAssetsPath, "game_data.json");
+        Debug.Log("Looking for game data at: " + filePath);
 
-        // check the file actually exists
-        if (!File.Exists(filePath))
+        // try the standard path first
+        if (File.Exists(filePath))
         {
-            Debug.LogError("game_data.json not found at: " + filePath);
-            return;
+            string jsonText = File.ReadAllText(filePath);
+            LoadedData = JsonUtility.FromJson<GameData>(jsonText);
+            Debug.Log("Game data loaded from StreamingAssets!");
+        }
+        else
+        {
+            // fallback: try loading from Resources folder instead
+            TextAsset jsonFile = Resources.Load<TextAsset>("game_data");
+            if (jsonFile != null)
+            {
+                LoadedData = JsonUtility.FromJson<GameData>(jsonFile.text);
+                Debug.Log("Game data loaded from Resources!");
+            }
+            else
+            {
+                Debug.LogError("Could not find game_data.json in StreamingAssets or Resources!");
+                Debug.LogError("StreamingAssets path tried: " + filePath);
+                Debug.LogError("Make sure game_data.json is in Assets/StreamingAssets/ OR Assets/Resources/");
+                return;
+            }
         }
 
-        // read the entire file as a string
-        string jsonText = File.ReadAllText(filePath);
-
-        // convert the JSON text into a GameData object
-        LoadedData = JsonUtility.FromJson<GameData>(jsonText);
-
-        Debug.Log("Game data loaded successfully!");
         Debug.Log("Characters: " + LoadedData.characters.Length);
         Debug.Log("Weapons: " + LoadedData.weapons.Length);
         Debug.Log("Rooms: " + LoadedData.rooms.Length);
         Debug.Log("Secret passages: " + LoadedData.secretPassages.Length);
     }
-
-    // helper methods so other scripts can easily get what they need
 
     public string[] GetCharacterNames()
     {

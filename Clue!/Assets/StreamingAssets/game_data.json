@@ -1,0 +1,65 @@
+{
+    "characters": [
+        {
+            "name": "Miss Scarlett",
+            "startRow": 24,
+            "startCol": 7,
+            "colour": { "r": 1.0, "g": 0.0, "b": 0.0 }
+        },
+        {
+            "name": "Col Mustard",
+            "startRow": 0,
+            "startCol": 17,
+            "colour": { "r": 1.0, "g": 1.0, "b": 0.0 }
+        },
+        {
+            "name": "Mrs White",
+            "startRow": 24,
+            "startCol": 14,
+            "colour": { "r": 1.0, "g": 1.0, "b": 1.0 }
+        },
+        {
+            "name": "Rev Green",
+            "startRow": 19,
+            "startCol": 24,
+            "colour": { "r": 0.0, "g": 1.0, "b": 0.0 }
+        },
+        {
+            "name": "Mrs Peacock",
+            "startRow": 6,
+            "startCol": 24,
+            "colour": { "r": 0.0, "g": 0.0, "b": 1.0 }
+        },
+        {
+            "name": "Prof Plum",
+            "startRow": 0,
+            "startCol": 9,
+            "colour": { "r": 0.5, "g": 0.0, "b": 0.5 }
+        }
+    ],
+    "weapons": [
+        "Dagger",
+        "Candlestick",
+        "Revolver",
+        "Rope",
+        "Lead Piping",
+        "Spanner"
+    ],
+    "rooms": [
+        "Kitchen",
+        "Ballroom",
+        "Conservatory",
+        "Billiard Room",
+        "Library",
+        "Study",
+        "Hall",
+        "Lounge",
+        "Dining Room"
+    ],
+    "secretPassages": [
+        { "from": "Kitchen", "to": "Study" },
+        { "from": "Study", "to": "Kitchen" },
+        { "from": "Conservatory", "to": "Lounge" },
+        { "from": "Lounge", "to": "Conservatory" }
+    ]
+}
