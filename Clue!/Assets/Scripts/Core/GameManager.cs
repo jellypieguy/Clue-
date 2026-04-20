@@ -20,17 +20,18 @@ public class GameManager : MonoBehaviour
     public GameState CurrentState { get; private set; }
     public event Action<GameState> OnGameStateChanged;
 
-    // references to other systems (assign in Unity Inspector or find on start)
+    // references to other systems
     public CardDealer cardDealer;
     public SuggestionSystem suggestionSystem;
     public AIAgent aiAgent;
+    public GameDataLoader dataLoader;
 
     // player tracking
     public List<Player> Players = new List<Player>();
     public int CurrentPlayerIndex { get; private set; }
     public Player CurrentPlayer { get { return Players[CurrentPlayerIndex]; } }
 
-    // game data
+    // game settings
     public int NumberOfHumanPlayers = 1;
     public int TotalPlayers = 6;
 
@@ -54,22 +55,26 @@ public class GameManager : MonoBehaviour
     {
         ChangeState(GameState.Setup);
 
-        // create players
-        string[] characterNames = { "Miss Scarlett", "Col Mustard", "Mrs White",
-                                     "Rev Green", "Mrs Peacock", "Prof Plum" };
-        Color[] colours = { Color.red, Color.yellow, Color.white,
-                            Color.green, Color.blue, new Color(0.5f, 0, 0.5f) };
+        //load all game data from the JSON file
+        dataLoader.LoadGameData();
+        GameData data = dataLoader.LoadedData;
 
-        // starting positions on the board (row, col) - adjust to match your board layout
-        int[,] startPositions = { {24,7}, {0,17}, {24,14}, {19,24}, {6,24}, {0,9} };
+        //give the card dealer the loaded names
+        cardDealer.LoadNamesFromData(dataLoader);
 
-        for (int i = 0; i < TotalPlayers; i++)
+        // create players using data from the JSON file
+        for (int i = 0; i < TotalPlayers && i < data.characters.Length; i++)
         {
-            GameObject playerObj = new GameObject("Player_" + characterNames[i]);
+            CharacterData charData = data.characters[i];
+
+            GameObject playerObj = new GameObject("Player_" + charData.name);
             Player player = playerObj.AddComponent<Player>();
+
             bool isHuman = i < NumberOfHumanPlayers;
-            player.Initialise(characterNames[i], isHuman, colours[i],
-                             startPositions[i, 0], startPositions[i, 1]);
+            Color colour = new Color(charData.colour.r, charData.colour.g, charData.colour.b);
+
+            player.Initialise(charData.name, isHuman, colour,
+                             charData.startRow, charData.startCol);
             Players.Add(player);
         }
 
@@ -79,11 +84,12 @@ public class GameManager : MonoBehaviour
         // initialise AI
         aiAgent.Initialise(cardDealer);
 
-        // Miss Scarlett goes first (index 0)
+        // Miss Scarlett always goes first
         CurrentPlayerIndex = 0;
 
         Debug.Log("Game setup complete. " + NumberOfHumanPlayers + " human player(s), "
                   + (TotalPlayers - NumberOfHumanPlayers) + " AI player(s).");
+        Debug.Log("All data loaded from game_data.json");
 
         ChangeState(GameState.WaitingForRoll);
     }
@@ -100,7 +106,6 @@ public class GameManager : MonoBehaviour
             case GameState.WaitingForRoll:
                 if (!CurrentPlayer.IsHuman && !CurrentPlayer.IsEliminated)
                 {
-                    // AI automatically rolls
                     DiceRoller.instance.RollDice();
                 }
                 break;
@@ -108,9 +113,7 @@ public class GameManager : MonoBehaviour
             case GameState.Moving:
                 if (!CurrentPlayer.IsHuman)
                 {
-                    // AI picks a target room and moves (simplified)
                     string targetRoom = aiAgent.ChooseTargetRoom(CurrentPlayer);
-                    // for now, just teleport AI to the room
                     CurrentPlayer.CurrentRoom = targetRoom;
                     Debug.Log(CurrentPlayer.PlayerName + " moves to " + targetRoom);
                     ChangeState(GameState.Suggesting);
@@ -123,7 +126,6 @@ public class GameManager : MonoBehaviour
                     aiAgent.MakeSuggestion(CurrentPlayer, suggestionSystem,
                                            CurrentPlayerIndex, Players);
 
-                    // check if AI wants to accuse
                     if (aiAgent.ShouldAccuse(CurrentPlayer))
                     {
                         ChangeState(GameState.Accusing);
@@ -168,7 +170,6 @@ public class GameManager : MonoBehaviour
 
     private void NextPlayer()
     {
-        // check if all players are eliminated (no winner)
         int activePlayers = 0;
         for (int i = 0; i < Players.Count; i++)
         {
@@ -182,7 +183,6 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // move to next non-eliminated player
         do
         {
             CurrentPlayerIndex = (CurrentPlayerIndex + 1) % Players.Count;
@@ -193,7 +193,6 @@ public class GameManager : MonoBehaviour
         ChangeState(GameState.WaitingForRoll);
     }
 
-    // called by UI when human player makes a suggestion
     public void HumanSuggestion(string person, string weapon)
     {
         if (CurrentPlayer.CurrentRoom == null)
@@ -205,11 +204,8 @@ public class GameManager : MonoBehaviour
         Card shown = suggestionSystem.ProcessSuggestion(
             person, weapon, CurrentPlayer.CurrentRoom,
             CurrentPlayerIndex, Players);
-
-        // TODO: show the revealed card to the human player via UI
     }
 
-    // called by UI when human player makes an accusation
     public void HumanAccusation(string person, string weapon, string room)
     {
         bool correct = cardDealer.Envelope.CheckAccusation(person, weapon, room);

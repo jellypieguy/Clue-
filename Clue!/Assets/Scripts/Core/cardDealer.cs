@@ -5,15 +5,27 @@ public class CardDealer : MonoBehaviour
 {
     public MurderEnvelope Envelope { get; private set; }
 
-    private string[] personNames = { "Col Mustard", "Prof Plum", "Rev Green", "Mrs Peacock", "Miss Scarlett", "Mrs White" };
-    private string[] weaponNames = { "Dagger", "Candlestick", "Revolver", "Rope", "Lead Piping", "Spanner" };
-    private string[] roomNames = { "Kitchen", "Ballroom", "Conservatory", "Billiard Room", "Library", "Study", "Hall", "Lounge", "Dining Room" };
+    //they get filled from the JSON file
+    private string[] personNames;
+    private string[] weaponNames;
+    private string[] roomNames;
 
     public List<Card> AllCards { get; private set; }
 
+    // call this to load names from the JSON data
+    public void LoadNamesFromData(GameDataLoader dataLoader)
+    {
+        personNames = dataLoader.GetCharacterNames();
+        weaponNames = dataLoader.GetWeaponNames();
+        roomNames = dataLoader.GetRoomNames();
+
+        Debug.Log("CardDealer loaded " + personNames.Length + " characters, "
+                  + weaponNames.Length + " weapons, "
+                  + roomNames.Length + " rooms from file.");
+    }
+
     public void SetupAndDeal(List<Player> players)
     {
-        // creating all 21 cards
         List<Card> personCards = new List<Card>();
         List<Card> weaponCards = new List<Card>();
         List<Card> roomCards = new List<Card>();
@@ -27,34 +39,29 @@ public class CardDealer : MonoBehaviour
         for (int i = 0; i < roomNames.Length; i++)
             roomCards.Add(new Card(roomNames[i], CardType.Room));
 
-        // shuffle each category
         Shuffle(personCards);
         Shuffle(weaponCards);
         Shuffle(roomCards);
 
-        // take top card of each for the murder envelope
         Envelope = new MurderEnvelope(personCards[0], weaponCards[0], roomCards[0]);
-        Debug.Log("Murder solution: " + personCards[0].Name + " with " + weaponCards[0].Name + " in " + roomCards[0].Name);
+        Debug.Log("Murder solution: " + personCards[0].Name + " with "
+                  + weaponCards[0].Name + " in " + roomCards[0].Name);
 
-        // remove murder cards from their lists
         personCards.RemoveAt(0);
         weaponCards.RemoveAt(0);
         roomCards.RemoveAt(0);
 
-        // combine remaining 18 cards and shuffle
         List<Card> dealPile = new List<Card>();
         dealPile.AddRange(personCards);
         dealPile.AddRange(weaponCards);
         dealPile.AddRange(roomCards);
         Shuffle(dealPile);
 
-        // store all cards for reference
         AllCards = new List<Card>();
         AllCards.AddRange(personCards);
         AllCards.AddRange(weaponCards);
         AllCards.AddRange(roomCards);
 
-        // deal cards one at a time clockwise (some players may get more)
         int playerIndex = 0;
         for (int i = 0; i < dealPile.Count; i++)
         {
@@ -62,7 +69,6 @@ public class CardDealer : MonoBehaviour
             playerIndex = (playerIndex + 1) % players.Count;
         }
 
-        // log each player's hand for debugging
         for (int i = 0; i < players.Count; i++)
         {
             string cards = "";
@@ -72,7 +78,6 @@ public class CardDealer : MonoBehaviour
         }
     }
 
-    // fisher-yates shuffle
     private void Shuffle(List<Card> list)
     {
         for (int i = list.Count - 1; i > 0; i--)
