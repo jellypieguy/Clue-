@@ -4,37 +4,40 @@ using System.Collections.Generic;
 
 public class GameManager : MonoBehaviour
 {
+    // Singleton instance accessible across all scripts
     public static GameManager Instance { get; private set; }
 
+    // Defines all possible phases of a player's turn
     public enum GameState
     {
-        Setup,
-        WaitingForRoll,
-        Moving,
-        Suggesting,
-        Accusing,
-        EndTurn,
-        GameOver
+        Setup,           // Initial game setup before play begins
+        WaitingForRoll,  // Player must roll the dice
+        Moving,          // Player is moving to a room
+        Suggesting,      // Player can make a suggestion
+        Accusing,        // Player is making a final accusation
+        EndTurn,         // Current turn is ending, move to next player
+        GameOver         // Game has ended
     }
 
     public GameState CurrentState { get; private set; }
-    public event Action<GameState> OnGameStateChanged;
+    public event Action<GameState> OnGameStateChanged; // Notifies UI when state changes
 
-    // references to other systems
+    // References to other game systems
     public CardDealer cardDealer;
     public SuggestionSystem suggestionSystem;
     public AIAgent aiAgent;
     public GameDataLoader dataLoader;
 
-    // player tracking
+    // Player tracking
     public List<Player> Players = new List<Player>();
     public int CurrentPlayerIndex { get; private set; }
     public Player CurrentPlayer { get { return Players[CurrentPlayerIndex]; } }
 
-    // game settings
+    // Configurable via main menu slider
     public int NumberOfHumanPlayers = 1;
     public int TotalPlayers = 6;
 
+    // Enforces singleton pattern and persists across scene loads
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -51,18 +54,18 @@ public class GameManager : MonoBehaviour
         SetupGame();
     }
 
+    // Initialises the full game: loads JSON data, creates players, deals cards, starts first turn
     private void SetupGame()
     {
         ChangeState(GameState.Setup);
 
-        //load all game data from the JSON file
+        // Load all game data from the JSON file
         dataLoader.LoadGameData();
         GameData data = dataLoader.LoadedData;
 
-        //give the card dealer the loaded names
         cardDealer.LoadNamesFromData(dataLoader);
 
-        // create players using data from the JSON file
+        // Create players dynamically from JSON character data
         for (int i = 0; i < TotalPlayers && i < data.characters.Length; i++)
         {
             CharacterData charData = data.characters[i];
@@ -70,6 +73,7 @@ public class GameManager : MonoBehaviour
             GameObject playerObj = new GameObject("Player_" + charData.name);
             Player player = playerObj.AddComponent<Player>();
 
+            // First N players are human, rest are AI
             bool isHuman = i < NumberOfHumanPlayers;
             Color colour = new Color(charData.colour.r, charData.colour.g, charData.colour.b);
 
@@ -78,22 +82,19 @@ public class GameManager : MonoBehaviour
             Players.Add(player);
         }
 
-        // deal cards
         cardDealer.SetupAndDeal(Players);
-
-        // initialise AI
         aiAgent.Initialise(cardDealer);
 
-        // Miss Scarlett always goes first
+        // Miss Scarlett always goes first per Clue rules
         CurrentPlayerIndex = 0;
 
         Debug.Log("Game setup complete. " + NumberOfHumanPlayers + " human player(s), "
                   + (TotalPlayers - NumberOfHumanPlayers) + " AI player(s).");
-        Debug.Log("All data loaded from game_data.json");
 
         ChangeState(GameState.WaitingForRoll);
     }
 
+    // Central state machine — controls all turn logic for both human and AI players
     public void ChangeState(GameState newState)
     {
         CurrentState = newState;
@@ -104,6 +105,7 @@ public class GameManager : MonoBehaviour
         switch (newState)
         {
             case GameState.WaitingForRoll:
+                // AI rolls automatically, human rolls via UI button
                 if (!CurrentPlayer.IsHuman && !CurrentPlayer.IsEliminated)
                 {
                     DiceRoller.instance.RollDice();
@@ -111,6 +113,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Moving:
+                // AI picks a target room automatically
                 if (!CurrentPlayer.IsHuman)
                 {
                     string targetRoom = aiAgent.ChooseTargetRoom(CurrentPlayer);
@@ -121,6 +124,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Suggesting:
+                // AI makes a suggestion then decides whether to accuse
                 if (!CurrentPlayer.IsHuman)
                 {
                     aiAgent.MakeSuggestion(CurrentPlayer, suggestionSystem,
@@ -138,6 +142,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.Accusing:
+                // AI makes accusation and is eliminated if wrong
                 if (!CurrentPlayer.IsHuman)
                 {
                     string[] accusation = aiAgent.MakeAccusation();
@@ -168,6 +173,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Advances to the next non-eliminated player, or ends the game if none remain
     private void NextPlayer()
     {
         int activePlayers = 0;
@@ -183,6 +189,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // Skip eliminated players
         do
         {
             CurrentPlayerIndex = (CurrentPlayerIndex + 1) % Players.Count;
@@ -193,6 +200,7 @@ public class GameManager : MonoBehaviour
         ChangeState(GameState.WaitingForRoll);
     }
 
+    // Called by UI when human player submits a suggestion
     public void HumanSuggestion(string person, string weapon)
     {
         if (CurrentPlayer.CurrentRoom == null)
@@ -206,6 +214,7 @@ public class GameManager : MonoBehaviour
             CurrentPlayerIndex, Players);
     }
 
+    // Called by UI when human player submits a final accusation
     public void HumanAccusation(string person, string weapon, string room)
     {
         bool correct = cardDealer.Envelope.CheckAccusation(person, weapon, room);

@@ -5,19 +5,19 @@ public class AIAgent : MonoBehaviour
 {
     private CardDealer cardDealer;
 
+    // Links the AI agent to the card dealer to access card name lists
     public void Initialise(CardDealer dealer)
     {
         cardDealer = dealer;
     }
 
-    // picks a random direction to move towards a room
-    // returns a target room name
+    // Picks a random room for the AI to move to, avoiding the room it is already in
     public string ChooseTargetRoom(Player aiPlayer)
     {
         string[] rooms = cardDealer.GetRoomNames();
         string target = rooms[Random.Range(0, rooms.Length)];
 
-        // avoid suggesting in the same room if possible
+        // Re-roll if the AI would stay in the same room
         if (target == aiPlayer.CurrentRoom && rooms.Length > 1)
         {
             while (target == aiPlayer.CurrentRoom)
@@ -27,7 +27,7 @@ public class AIAgent : MonoBehaviour
         return target;
     }
 
-    // makes a random suggestion using the room the AI is currently in
+    // Makes a random suggestion using a random person, random weapon, and the AI's current room
     public void MakeSuggestion(Player aiPlayer, SuggestionSystem suggestionSystem,
                                 int playerIndex, List<Player> allPlayers)
     {
@@ -42,21 +42,19 @@ public class AIAgent : MonoBehaviour
 
         string chosenPerson = persons[Random.Range(0, persons.Length)];
         string chosenWeapon = weapons[Random.Range(0, weapons.Length)];
-        string room = aiPlayer.CurrentRoom;
 
-        suggestionSystem.ProcessSuggestion(chosenPerson, chosenWeapon, room,
+        suggestionSystem.ProcessSuggestion(chosenPerson, chosenWeapon, aiPlayer.CurrentRoom,
                                            playerIndex, allPlayers);
     }
 
-    // decides whether to make an accusation (very conservative: only if AI holds 18+ known cards)
+    // Always returns false for this random agent — accusation logic can be extended in future
+    // Prevents the AI from eliminating itself with an early random guess
     public bool ShouldAccuse(Player aiPlayer)
     {
-        // for random agent, very low chance of accusing unless we add smarter logic later
-        // this prevents the AI from eliminating itself early
         return false;
     }
 
-    // makes a random accusation (if ShouldAccuse returns true)
+    // Generates a fully random accusation across all three card categories
     public string[] MakeAccusation()
     {
         string[] persons = cardDealer.GetPersonNames();

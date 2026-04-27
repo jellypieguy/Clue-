@@ -3,7 +3,10 @@ using System;
 
 public class DiceRoller : MonoBehaviour
 {
+    // Singleton instance so any script can trigger a dice roll
     public static DiceRoller instance { get; private set; }
+
+    // Broadcasts the dice result to any subscribed listeners (e.g. UI)
     public event Action<int> OnDiceRolled;
 
     private void Awake()
@@ -16,8 +19,10 @@ public class DiceRoller : MonoBehaviour
         instance = this;
     }
 
+    // Rolls a six-sided die and advances the game state to Moving
     public void RollDice()
-    {   //checking if it's the right time to roll the dice
+    {
+        // Only allow rolling during the correct game state
         if (GameManager.Instance == null) return;
         if (GameManager.Instance.CurrentState != GameManager.GameState.WaitingForRoll)
             return;

@@ -5,14 +5,14 @@ public class CardDealer : MonoBehaviour
 {
     public MurderEnvelope Envelope { get; private set; }
 
-    //they get filled from the JSON file
+    // Loaded from JSON via GameDataLoader
     private string[] personNames;
     private string[] weaponNames;
     private string[] roomNames;
 
     public List<Card> AllCards { get; private set; }
 
-    // call this to load names from the JSON data
+    // Loads card names from the JSON data file before dealing begins
     public void LoadNamesFromData(GameDataLoader dataLoader)
     {
         personNames = dataLoader.GetCharacterNames();
@@ -24,6 +24,7 @@ public class CardDealer : MonoBehaviour
                   + roomNames.Length + " rooms from file.");
     }
 
+    // Creates all cards, picks the murder envelope, then deals remaining cards to players clockwise
     public void SetupAndDeal(List<Player> players)
     {
         List<Card> personCards = new List<Card>();
@@ -39,18 +40,22 @@ public class CardDealer : MonoBehaviour
         for (int i = 0; i < roomNames.Length; i++)
             roomCards.Add(new Card(roomNames[i], CardType.Room));
 
+        // Shuffle each category separately to ensure one of each type in the envelope
         Shuffle(personCards);
         Shuffle(weaponCards);
         Shuffle(roomCards);
 
+        // First card of each shuffled list becomes the murder solution
         Envelope = new MurderEnvelope(personCards[0], weaponCards[0], roomCards[0]);
         Debug.Log("Murder solution: " + personCards[0].Name + " with "
                   + weaponCards[0].Name + " in " + roomCards[0].Name);
 
+        // Remove envelope cards from the deal pile
         personCards.RemoveAt(0);
         weaponCards.RemoveAt(0);
         roomCards.RemoveAt(0);
 
+        // Combine and shuffle remaining cards into a single deal pile
         List<Card> dealPile = new List<Card>();
         dealPile.AddRange(personCards);
         dealPile.AddRange(weaponCards);
@@ -62,6 +67,7 @@ public class CardDealer : MonoBehaviour
         AllCards.AddRange(weaponCards);
         AllCards.AddRange(roomCards);
 
+        // Deal cards one by one clockwise to each player
         int playerIndex = 0;
         for (int i = 0; i < dealPile.Count; i++)
         {
@@ -69,6 +75,7 @@ public class CardDealer : MonoBehaviour
             playerIndex = (playerIndex + 1) % players.Count;
         }
 
+        // Log each player's hand for debugging
         for (int i = 0; i < players.Count; i++)
         {
             string cards = "";
@@ -78,6 +85,7 @@ public class CardDealer : MonoBehaviour
         }
     }
 
+    // Fisher-Yates shuffle to randomise card order
     private void Shuffle(List<Card> list)
     {
         for (int i = list.Count - 1; i > 0; i--)
