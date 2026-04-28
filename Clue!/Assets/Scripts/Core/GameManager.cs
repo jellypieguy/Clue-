@@ -27,6 +27,7 @@ public class GameManager : MonoBehaviour
     public SuggestionSystem suggestionSystem;
     public AIAgent aiAgent;
     public GameDataLoader dataLoader;
+    public SuggestionUI suggestionUI;
 
     [Header("Prefabs")]
     public GameObject playerPrefab;
@@ -140,6 +141,12 @@ public class GameManager : MonoBehaviour
         Debug.Log("State changed to: " + newState + " | Current player: " +
                   (activePlayer != null ? activePlayer.Character.ToString() : "none"));
 
+        // Trigger UI popups for specific states
+        if (newState == GameState.Suggesting && activePlayer != null && activePlayer.IsHuman)
+        {
+            if (suggestionUI != null) suggestionUI.Show();
+        }
+
         switch (newState)
         {
             case GameState.WaitingForRoll:
@@ -250,5 +257,16 @@ public class GameManager : MonoBehaviour
             activePlayer.Eliminate();
             ChangeState(GameState.EndTurn);
         }
+    }
+
+    // Returns the Room CardData for the tile the current player is standing on
+    public CardData GetCurrentPlayerRoom()
+    {
+        PlayerController activePlayer = TurnManager.Instance != null ? TurnManager.Instance.CurrentPlayer : null;
+        if (activePlayer != null && activePlayer.CurrentTile != null)
+        {
+            return activePlayer.CurrentTile.RoomData;
+        }
+        return null;
     }
 }
