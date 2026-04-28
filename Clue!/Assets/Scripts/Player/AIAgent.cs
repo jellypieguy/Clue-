@@ -1,71 +1,83 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// Random-decision AI for autonomous players.
+// Picks a random target room, makes random suggestions, never accuses.
+// Sophistication can be added later, the spec only requires it plays the game.
 public class AIAgent : MonoBehaviour
 {
-    private CardDealer cardDealer;
-
-    // Links the AI agent to the card dealer to access card name lists
-    public void Initialise(CardDealer dealer)
+    // Picks a random room for the AI to move to, avoiding the room it is already in.
+    // Returns null if the AI cannot determine its current room or no rooms are available.
+    public CardData ChooseTargetRoom(PlayerController aiPlayer)
     {
-        cardDealer = dealer;
-    }
+        List<CardData> rooms = DeckManager.Instance.AllActiveRooms;
+        if (rooms == null || rooms.Count == 0) return null;
 
-    // Picks a random room for the AI to move to, avoiding the room it is already in
-    public string ChooseTargetRoom(Player aiPlayer)
-    {
-        string[] rooms = cardDealer.GetRoomNames();
-        string target = rooms[Random.Range(0, rooms.Length)];
+        // What room is the AI currently in (if any)?
+        CardData currentRoom = aiPlayer.CurrentTile != null ? aiPlayer.CurrentTile.RoomData : null;
+
+        CardData target = rooms[Random.Range(0, rooms.Count)];
 
         // Re-roll if the AI would stay in the same room
-        if (target == aiPlayer.CurrentRoom && rooms.Length > 1)
+        if (target == currentRoom && rooms.Count > 1)
         {
-            while (target == aiPlayer.CurrentRoom)
-                target = rooms[Random.Range(0, rooms.Length)];
+            while (target == currentRoom)
+                target = rooms[Random.Range(0, rooms.Count)];
         }
 
         return target;
     }
 
-    // Makes a random suggestion using a random person, random weapon, and the AI's current room
-    public void MakeSuggestion(Player aiPlayer, SuggestionSystem suggestionSystem,
-                                int playerIndex, List<Player> allPlayers)
+    // Makes a random suggestion using a random suspect, random weapon, and the AI's current room.
+    // Caller must check the AI is actually in a room first.
+    public void MakeSuggestion(PlayerController aiPlayer, SuggestionSystem suggestionSystem,
+                                int playerIndex, List<PlayerController> allPlayers)
     {
-        if (aiPlayer.CurrentRoom == null)
+        CardData currentRoom = aiPlayer.CurrentTile != null ? aiPlayer.CurrentTile.RoomData : null;
+
+        if (currentRoom == null)
         {
-            Debug.Log(aiPlayer.PlayerName + " is not in a room, cannot suggest.");
+            Debug.Log($"{aiPlayer.Character} is not in a room, cannot suggest.");
             return;
         }
 
-        string[] persons = cardDealer.GetPersonNames();
-        string[] weapons = cardDealer.GetWeaponNames();
+        List<CardData> suspects = DeckManager.Instance.AllSuspects;
+        List<CardData> weapons  = DeckManager.Instance.AllWeapons;
 
-        string chosenPerson = persons[Random.Range(0, persons.Length)];
-        string chosenWeapon = weapons[Random.Range(0, weapons.Length)];
+        if (suspects.Count == 0 || weapons.Count == 0)
+        {
+            Debug.LogWarning("AIAgent: No suspects or weapons available to suggest.");
+            return;
+        }
 
-        suggestionSystem.ProcessSuggestion(chosenPerson, chosenWeapon, aiPlayer.CurrentRoom,
+        CardData chosenSuspect = suspects[Random.Range(0, suspects.Count)];
+        CardData chosenWeapon  = weapons[Random.Range(0, weapons.Count)];
+
+        suggestionSystem.ProcessSuggestion(chosenSuspect, chosenWeapon, currentRoom,
                                            playerIndex, allPlayers);
     }
 
-    // Always returns false for this random agent — accusation logic can be extended in future
-    // Prevents the AI from eliminating itself with an early random guess
-    public bool ShouldAccuse(Player aiPlayer)
+    // Always returns false for this random agent.
+    // Stops the AI from eliminating itself with a wild guess.
+    // Smarter accusation logic can be added once detective notes are tracked.
+    public bool ShouldAccuse(PlayerController aiPlayer)
     {
         return false;
     }
 
-    // Generates a fully random accusation across all three card categories
-    public string[] MakeAccusation()
+    // Generates a fully random accusation across all three card categories.
+    // Used only if ShouldAccuse returns true.
+    public CardData[] MakeAccusation()
     {
-        string[] persons = cardDealer.GetPersonNames();
-        string[] weapons = cardDealer.GetWeaponNames();
-        string[] rooms = cardDealer.GetRoomNames();
+        List<CardData> suspects = DeckManager.Instance.AllSuspects;
+        List<CardData> weapons  = DeckManager.Instance.AllWeapons;
+        List<CardData> rooms    = DeckManager.Instance.AllActiveRooms;
 
-        return new string[]
+        return new CardData[]
         {
-            persons[Random.Range(0, persons.Length)],
-            weapons[Random.Range(0, weapons.Length)],
-            rooms[Random.Range(0, rooms.Length)]
+            suspects[Random.Range(0, suspects.Count)],
+            weapons[Random.Range(0, weapons.Count)],
+            rooms[Random.Range(0, rooms.Count)]
         };
     }
 }

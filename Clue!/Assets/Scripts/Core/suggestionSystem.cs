@@ -1,16 +1,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// Handles a suggestion made by the current player.
+// Goes round the table clockwise, asks each PlayerHand if it can refute the suggestion,
+// and stops at the first player who can show a matching card.
 public class SuggestionSystem : MonoBehaviour
 {
     // Processes a suggestion by checking each player clockwise from the suggester.
-    // Each player reveals a matching card if they have one, then the round stops.
     // Returns the card shown, or null if nobody could disprove the suggestion.
-    public Card ProcessSuggestion(string person, string weapon, string room,
-                                   int suggestingPlayerIndex, List<Player> allPlayers)
+    public CardData ProcessSuggestion(CardData suspect, CardData weapon, CardData room,
+                                       int suggestingPlayerIndex, List<PlayerController> allPlayers)
     {
-        Debug.Log(allPlayers[suggestingPlayerIndex].PlayerName +
-                  " suggests: " + person + " with " + weapon + " in " + room);
+        PlayerController suggester = allPlayers[suggestingPlayerIndex];
+        string suggesterName = GetPlayerName(suggester);
+
+        Debug.Log($"{suggesterName} suggests: {suspect.CardName} with {weapon.CardName} in {room.CardName}");
 
         int playerCount = allPlayers.Count;
 
@@ -18,26 +22,60 @@ public class SuggestionSystem : MonoBehaviour
         for (int i = 1; i < playerCount; i++)
         {
             int checkIndex = (suggestingPlayerIndex + i) % playerCount;
-            Player playerToCheck = allPlayers[checkIndex];
+            PlayerController playerToCheck = allPlayers[checkIndex];
+            string checkName = GetPlayerName(playerToCheck);
 
-            // Ask player if they hold any of the suggested cards
-            Card shownCard = playerToCheck.GetCardToShow(person, weapon, room);
+            // Skip eliminated players — they still hold cards but the rules say
+            // they remain in the game only to refute, so they DO get checked
+            // (this is the existing behaviour, eliminated players still show cards)
 
-            if (shownCard != null)
+            PlayerHand hand = playerToCheck.GetComponent<PlayerHand>();
+            if (hand == null)
             {
-                // Only the suggesting player sees the shown card
-                Debug.Log(playerToCheck.PlayerName + " shows: " + shownCard.Name +
-                          " to " + allPlayers[suggestingPlayerIndex].PlayerName);
+                Debug.LogWarning($"{checkName} has no PlayerHand component.");
+                continue;
+            }
+
+            // Ask the hand which cards (if any) can refute this suggestion
+            List<CardData> refutingCards = hand.GetRefutingCards(suspect, weapon, room);
+
+            if (refutingCards.Count > 0)
+            {
+                // Pick which card to show
+                // AI: random pick from the matching cards
+                // Human: TODO show UI for player to choose, for now picks first
+                CardData shownCard;
+                if (playerToCheck.IsHuman)
+                {
+                    // TODO: replace with UI choice
+                    shownCard = refutingCards[0];
+                }
+                else
+                {
+                    shownCard = refutingCards[Random.Range(0, refutingCards.Count)];
+                }
+
+                Debug.Log($"{checkName} shows: {shownCard.CardName} to {suggesterName}");
                 return shownCard;
             }
             else
             {
-                Debug.Log(playerToCheck.PlayerName + " has nothing to show.");
+                Debug.Log($"{checkName} has nothing to show.");
             }
         }
 
         // If no player could disprove, the suggestion may be the murder solution
         Debug.Log("Nobody could disprove the suggestion!");
         return null;
+    }
+
+    // Helper to safely get a display name for a player.
+    // Looks for the Player component first; falls back to the CharacterType enum.
+    private string GetPlayerName(PlayerController pc)
+    {
+        Player playerData = pc.GetComponent<Player>();
+        if (playerData != null && !string.IsNullOrEmpty(playerData.PlayerName))
+            return playerData.PlayerName;
+        return pc.Character.ToString();
     }
 }

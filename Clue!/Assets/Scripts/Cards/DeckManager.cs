@@ -10,7 +10,7 @@ public class DeckManager : MonoBehaviour
     [SerializeField] private List<CardData> allWeapons;
     [SerializeField] private List<CardData> allRooms;
 
-    // for bot filled by by the game deck
+    // for bot filled by the game deck
     public List<CardData> AllSuspects    => allSuspects;
     public List<CardData> AllWeapons     => allWeapons;
     public List<CardData> AllActiveRooms { get; private set; } = new List<CardData>();
