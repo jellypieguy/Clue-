@@ -66,6 +66,12 @@ public class GameManager : MonoBehaviour
     {
         ChangeState(GameState.Setup);
 
+        // Load the human player count from the main menu slider
+        if (PlayerSelectionSlider.HumanCount > 0)
+        {
+            NumberOfHumanPlayers = PlayerSelectionSlider.HumanCount;
+        }
+
         // Load all game data from the JSON file
         dataLoader.LoadGameData();
         GameData data = dataLoader.LoadedData;
