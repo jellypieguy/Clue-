@@ -28,6 +28,9 @@ public class GameManager : MonoBehaviour
     public AIAgent aiAgent;
     public GameDataLoader dataLoader;
 
+    [Header("Prefabs")]
+    public GameObject playerPrefab;
+
     // Configurable via main menu slider
     public int NumberOfHumanPlayers = 1;
     public int TotalPlayers = 6;
@@ -80,20 +83,25 @@ public class GameManager : MonoBehaviour
         {
             CharacterData charData = data.characters[i];
 
-            GameObject playerObj = new GameObject("Player_" + charData.name);
-            Player player = playerObj.AddComponent<Player>();
-            PlayerController pc = playerObj.AddComponent<PlayerController>();
-            playerObj.AddComponent<PlayerHand>();
+            GameObject playerObj = Instantiate(playerPrefab);
+            playerObj.name = "Player_" + charData.name;
+
+            Player player = playerObj.GetComponent<Player>();
+            PlayerController pc = playerObj.GetComponent<PlayerController>();
+
+            // Ensure PlayerHand exists
+            if (playerObj.GetComponent<PlayerHand>() == null)
+                playerObj.AddComponent<PlayerHand>();
 
             // First N players are human, rest are AI
             bool isHuman = i < NumberOfHumanPlayers;
             Color colour = new Color(charData.colour.r, charData.colour.g, charData.colour.b);
 
             player.Initialise(charData.name, colour);
-            
+
             pc.IsHuman = isHuman;
             pc.Character = (PlayerController.CharacterType)i;
-            
+
             if (TurnManager.Instance != null)
             {
                 TurnManager.Instance.RegisterPlayer(pc);
@@ -119,9 +127,9 @@ public class GameManager : MonoBehaviour
     public void ChangeState(GameState newState)
     {
         CurrentState = newState;
-        
+
         PlayerController activePlayer = TurnManager.Instance != null ? TurnManager.Instance.CurrentPlayer : null;
-        
+
         OnGameStateChanged?.Invoke(newState);
         Debug.Log("State changed to: " + newState + " | Current player: " +
                   (activePlayer != null ? activePlayer.Character.ToString() : "none"));

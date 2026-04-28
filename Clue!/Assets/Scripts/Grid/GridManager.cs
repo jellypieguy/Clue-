@@ -49,6 +49,7 @@ public class GridManager : MonoBehaviour
 
         // Calc dimension early so CameraFit can use them in Start
         CalculateDimensions();
+        GenerateGrid();
     }
 
     private void CalculateDimensions()
@@ -71,7 +72,6 @@ public class GridManager : MonoBehaviour
 
     private void Start()
     {
-        GenerateGrid();
     }
 
     private void GenerateGrid()

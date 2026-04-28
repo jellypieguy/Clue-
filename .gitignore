@@ -97,5 +97,4 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
-Clue\!/Assets/Scripts/Cards/cardDealer.cs.meta
-Clue\!/Assets/Scripts/Cards/Cards.cs.meta
+
