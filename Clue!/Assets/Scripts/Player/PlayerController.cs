@@ -165,7 +165,7 @@ public class PlayerController : MonoBehaviour
         transform.position = targetPos;
         _isMoving = false;
         _reachableTiles.Clear();
-        AudioManager.Instance?.PlayFootstep();
+        // AudioManager.Instance?.PlayFootstep();
 
         if (_currentTile.Type == Tile.TileType.Room)
         {

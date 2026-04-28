@@ -47,10 +47,10 @@ public class DiceRoller : MonoBehaviour
 
         Debug.Log($"DiceRoller: {d1} + {d2} = {total}.");
 
-        if (TurnManager.Instance?.CurrentPlayer != null)
-            UIManager.Instance?.AddLogEvent($"{TurnManager.Instance.CurrentPlayer.Character} rolled {total}.");
-
-        AudioManager.Instance?.PlayDiceRoll();
+        if (TurnManager.Instance != null && TurnManager.Instance.CurrentPlayer != null)
+        {
+            Debug.Log($"{TurnManager.Instance.CurrentPlayer.Character} rolled {total}.");
+        }
         StartCoroutine(AnimateRoll(d1, d2, total));
     }
 

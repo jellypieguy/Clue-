@@ -28,11 +28,6 @@ public class GameManager : MonoBehaviour
     public AIAgent aiAgent;
     public GameDataLoader dataLoader;
 
-    // Player tracking
-    public List<Player> Players = new List<Player>();
-    public int CurrentPlayerIndex { get; private set; }
-    public Player CurrentPlayer { get { return Players[CurrentPlayerIndex]; } }
-
     // Configurable via main menu slider
     public int NumberOfHumanPlayers = 1;
     public int TotalPlayers = 6;
@@ -47,6 +42,15 @@ public class GameManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+    }
+
+    // Automatically finds manager components on the same GameObject to save you from dragging and dropping
+    private void Reset()
+    {
+        cardDealer = GetComponent<CardDealer>();
+        suggestionSystem = GetComponent<SuggestionSystem>();
+        aiAgent = GetComponent<AIAgent>();
+        dataLoader = GetComponent<GameDataLoader>();
     }
 
     private void Start()
@@ -65,6 +69,12 @@ public class GameManager : MonoBehaviour
 
         cardDealer.LoadNamesFromData(dataLoader);
 
+        // Setup the DeckManager with cards and pick the solution
+        if (DeckManager.Instance != null)
+        {
+            DeckManager.Instance.SetupGameDeck();
+        }
+
         // Create players dynamically from JSON character data
         for (int i = 0; i < TotalPlayers && i < data.characters.Length; i++)
         {
@@ -72,65 +82,87 @@ public class GameManager : MonoBehaviour
 
             GameObject playerObj = new GameObject("Player_" + charData.name);
             Player player = playerObj.AddComponent<Player>();
+            PlayerController pc = playerObj.AddComponent<PlayerController>();
+            playerObj.AddComponent<PlayerHand>();
 
             // First N players are human, rest are AI
             bool isHuman = i < NumberOfHumanPlayers;
             Color colour = new Color(charData.colour.r, charData.colour.g, charData.colour.b);
 
-            player.Initialise(charData.name, isHuman, colour,
-                             charData.startRow, charData.startCol);
-            Players.Add(player);
+            player.Initialise(charData.name, colour);
+            
+            pc.IsHuman = isHuman;
+            pc.Character = (PlayerController.CharacterType)i;
+            
+            if (TurnManager.Instance != null)
+            {
+                TurnManager.Instance.RegisterPlayer(pc);
+            }
         }
 
-        cardDealer.SetupAndDeal(Players);
-        aiAgent.Initialise(cardDealer);
+        if (DeckManager.Instance != null)
+        {
+            DeckManager.Instance.DealCards();
+        }
 
-        // Miss Scarlett always goes first per Clue rules
-        CurrentPlayerIndex = 0;
+        // TurnManager will place players and start the first turn
+        if (TurnManager.Instance != null)
+        {
+            TurnManager.Instance.StartFirstTurn();
+        }
 
         Debug.Log("Game setup complete. " + NumberOfHumanPlayers + " human player(s), "
                   + (TotalPlayers - NumberOfHumanPlayers) + " AI player(s).");
-
-        ChangeState(GameState.WaitingForRoll);
     }
 
     // Central state machine — controls all turn logic for both human and AI players
     public void ChangeState(GameState newState)
     {
         CurrentState = newState;
+        
+        PlayerController activePlayer = TurnManager.Instance != null ? TurnManager.Instance.CurrentPlayer : null;
+        
         OnGameStateChanged?.Invoke(newState);
         Debug.Log("State changed to: " + newState + " | Current player: " +
-                  (Players.Count > 0 ? CurrentPlayer.PlayerName : "none"));
+                  (activePlayer != null ? activePlayer.Character.ToString() : "none"));
 
         switch (newState)
         {
             case GameState.WaitingForRoll:
                 // AI rolls automatically, human rolls via UI button
-                if (!CurrentPlayer.IsHuman && !CurrentPlayer.IsEliminated)
+                if (activePlayer != null && !activePlayer.IsHuman && !activePlayer.IsEliminated)
                 {
-                    DiceRoller.instance.RollDice();
+                    DiceRoller.Instance.RollDice();
                 }
                 break;
 
             case GameState.Moving:
                 // AI picks a target room automatically
-                if (!CurrentPlayer.IsHuman)
+                if (activePlayer != null && !activePlayer.IsHuman)
                 {
-                    string targetRoom = aiAgent.ChooseTargetRoom(CurrentPlayer);
-                    CurrentPlayer.CurrentRoom = targetRoom;
-                    Debug.Log(CurrentPlayer.PlayerName + " moves to " + targetRoom);
-                    ChangeState(GameState.Suggesting);
+                    CardData targetRoom = aiAgent.ChooseTargetRoom(activePlayer);
+                    if (targetRoom != null)
+                    {
+                        Tile targetTile = GridManager.Instance.GetRoomTile(targetRoom);
+                        if (targetTile != null)
+                        {
+                            activePlayer.TeleportToTile(targetTile);
+                            Debug.Log(activePlayer.Character + " moves to " + targetRoom.CardName);
+                            ChangeState(GameState.Suggesting);
+                        }
+                    }
                 }
                 break;
 
             case GameState.Suggesting:
                 // AI makes a suggestion then decides whether to accuse
-                if (!CurrentPlayer.IsHuman)
+                if (activePlayer != null && !activePlayer.IsHuman)
                 {
-                    aiAgent.MakeSuggestion(CurrentPlayer, suggestionSystem,
-                                           CurrentPlayerIndex, Players);
+                    int playerIndex = TurnManager.Instance.GetPlayers().IndexOf(activePlayer);
+                    aiAgent.MakeSuggestion(activePlayer, suggestionSystem,
+                                           playerIndex, TurnManager.Instance.GetPlayers());
 
-                    if (aiAgent.ShouldAccuse(CurrentPlayer))
+                    if (aiAgent.ShouldAccuse(activePlayer))
                     {
                         ChangeState(GameState.Accusing);
                     }
@@ -143,28 +175,29 @@ public class GameManager : MonoBehaviour
 
             case GameState.Accusing:
                 // AI makes accusation and is eliminated if wrong
-                if (!CurrentPlayer.IsHuman)
+                if (activePlayer != null && !activePlayer.IsHuman)
                 {
-                    string[] accusation = aiAgent.MakeAccusation();
-                    bool correct = cardDealer.Envelope.CheckAccusation(
-                        accusation[0], accusation[1], accusation[2]);
+                    CardData[] accusation = aiAgent.MakeAccusation();
+                    bool correct = (DeckManager.Instance.Murderer == accusation[0] &&
+                                    DeckManager.Instance.MurderWeapon == accusation[1] &&
+                                    DeckManager.Instance.MurderRoom == accusation[2]);
 
                     if (correct)
                     {
-                        Debug.Log(CurrentPlayer.PlayerName + " wins! Correct accusation!");
+                        Debug.Log(activePlayer.Character + " wins! Correct accusation!");
                         ChangeState(GameState.GameOver);
                     }
                     else
                     {
-                        Debug.Log(CurrentPlayer.PlayerName + " made wrong accusation. Eliminated.");
-                        CurrentPlayer.IsEliminated = true;
+                        Debug.Log(activePlayer.Character + " made wrong accusation. Eliminated.");
+                        activePlayer.Eliminate();
                         ChangeState(GameState.EndTurn);
                     }
                 }
                 break;
 
             case GameState.EndTurn:
-                NextPlayer();
+                // TurnManager handles PassTurnToNextPlayer when state changes to EndTurn
                 break;
 
             case GameState.GameOver:
@@ -173,51 +206,24 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Advances to the next non-eliminated player, or ends the game if none remain
-    private void NextPlayer()
-    {
-        int activePlayers = 0;
-        for (int i = 0; i < Players.Count; i++)
-        {
-            if (!Players[i].IsEliminated) activePlayers++;
-        }
-
-        if (activePlayers <= 0)
-        {
-            Debug.Log("All players eliminated. No winner.");
-            ChangeState(GameState.GameOver);
-            return;
-        }
-
-        // Skip eliminated players
-        do
-        {
-            CurrentPlayerIndex = (CurrentPlayerIndex + 1) % Players.Count;
-        }
-        while (CurrentPlayer.IsEliminated);
-
-        Debug.Log("Next turn: " + CurrentPlayer.PlayerName);
-        ChangeState(GameState.WaitingForRoll);
-    }
-
     // Called by UI when human player submits a suggestion
-    public void HumanSuggestion(string person, string weapon)
+    public void HumanSuggestion(CardData person, CardData weapon, CardData room)
     {
-        if (CurrentPlayer.CurrentRoom == null)
-        {
-            Debug.Log("You must be in a room to make a suggestion.");
-            return;
-        }
+        PlayerController activePlayer = TurnManager.Instance.CurrentPlayer;
+        int playerIndex = TurnManager.Instance.GetPlayers().IndexOf(activePlayer);
 
-        Card shown = suggestionSystem.ProcessSuggestion(
-            person, weapon, CurrentPlayer.CurrentRoom,
-            CurrentPlayerIndex, Players);
+        CardData shown = suggestionSystem.ProcessSuggestion(
+            person, weapon, room,
+            playerIndex, TurnManager.Instance.GetPlayers());
     }
 
     // Called by UI when human player submits a final accusation
-    public void HumanAccusation(string person, string weapon, string room)
+    public void HumanAccusation(CardData person, CardData weapon, CardData room)
     {
-        bool correct = cardDealer.Envelope.CheckAccusation(person, weapon, room);
+        PlayerController activePlayer = TurnManager.Instance.CurrentPlayer;
+        bool correct = (DeckManager.Instance.Murderer == person &&
+                        DeckManager.Instance.MurderWeapon == weapon &&
+                        DeckManager.Instance.MurderRoom == room);
 
         if (correct)
         {
@@ -227,7 +233,7 @@ public class GameManager : MonoBehaviour
         else
         {
             Debug.Log("Wrong accusation. You are eliminated.");
-            CurrentPlayer.IsEliminated = true;
+            activePlayer.Eliminate();
             ChangeState(GameState.EndTurn);
         }
     }

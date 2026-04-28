@@ -46,7 +46,7 @@ public class TurnManager : MonoBehaviour
     {
         if (CurrentPlayer != null)
         {
-            UIManager.Instance?.AddLogEvent($"Turn passed to {CurrentPlayer.Character}.");
+            Debug.Log($"Turn passed to {CurrentPlayer.Character}.");
             OnPlayerTurnChanged?.Invoke(CurrentPlayer);
         }
     }
@@ -110,7 +110,7 @@ public class TurnManager : MonoBehaviour
         }
 
         _currentPlayerIndex = 0;
-        UIManager.Instance?.AddLogEvent("The Murder Envelope has been sealed! The game begins.");
+        Debug.Log("The Murder Envelope has been sealed! The game begins.");
         GameManager.Instance.ChangeState(GameManager.GameState.WaitingForRoll);
     }
 
@@ -144,7 +144,7 @@ public class TurnManager : MonoBehaviour
         if (!foundActivePlayer)
         {
             Debug.LogError("ALL PLAYERS ELIMINATED! The murderer got away with it!");
-            UIManager.Instance?.AddLogEvent("ALL PLAYERS ELIMINATED! The murderer got away with it!");
+            Debug.Log("ALL PLAYERS ELIMINATED! The murderer got away with it!");
             GameManager.Instance.ChangeState(GameManager.GameState.GameOver);
             return;
         }

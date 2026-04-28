@@ -89,27 +89,27 @@ public class GridManager : MonoBehaviour
         float startX = -GridWidth / 2f + 0.5f;
         float startY = -GridHeight / 2f + 0.5f;
 
-        // cache tile sprite rather than repeatedly
-        Sprite tileSprite = tilePrefab != null ? tilePrefab.GetComponent<SpriteRenderer>()?.sprite : null;
+        SpriteRenderer prefabSR = tilePrefab != null ? tilePrefab.GetComponent<SpriteRenderer>() : null;
+        Sprite tileSprite = prefabSR != null ? prefabSR.sprite : null;
 
         // background nd grid
-        GameObject boardBase = new GameObject("BoardBackground");
+        GameObject boardBase = new("BoardBackground");
         boardBase.transform.SetParent(transform);
-        boardBase.transform.localPosition = new Vector3(0, 0, 0.5f);
+        boardBase.transform.localPosition = new(0, 0, 0.5f);
         SpriteRenderer baseSR = boardBase.AddComponent<SpriteRenderer>();
         baseSR.sprite = tileSprite;
-        baseSR.color = new Color(0.05f, 0.05f, 0.05f);
+        baseSR.color = new(0.05f, 0.05f, 0.05f);
         baseSR.drawMode = SpriteDrawMode.Simple;
-        boardBase.transform.localScale = new Vector3(GridWidth + 1f, GridHeight + 1f, 1);
+        boardBase.transform.localScale = new(GridWidth + 1f, GridHeight + 1f, 1);
 
-        GameObject borderBase = new GameObject("BlackBorders");
+        GameObject borderBase = new("BlackBorders");
         borderBase.transform.SetParent(transform);
-        borderBase.transform.localPosition = new Vector3(0, 0, 0.25f);
+        borderBase.transform.localPosition = new(0, 0, 0.25f);
         SpriteRenderer borderSR = borderBase.AddComponent<SpriteRenderer>();
         borderSR.sprite = tileSprite;
         borderSR.color = Color.black;
         borderSR.drawMode = SpriteDrawMode.Simple;
-        borderBase.transform.localScale = new Vector3(GridWidth, GridHeight, 1);
+        borderBase.transform.localScale = new(GridWidth, GridHeight, 1);
 
         for (int x = 0; x < GridWidth; x++)
         {
@@ -188,18 +188,18 @@ public class GridManager : MonoBehaviour
             float cx = (RoomRegions[i, 0] + RoomRegions[i, 1]) * 0.5f;
             float cy = (RoomRegions[i, 2] + RoomRegions[i, 3]) * 0.5f;
 
-            GameObject go = new GameObject($"Label_{card.CardName}");
+            GameObject go = new($"Label_{card.CardName}");
             go.transform.SetParent(transform);
-            go.transform.position = new Vector3(startX + cx, startY + cy, -0.05f);
+            go.transform.position = new(startX + cx, startY + cy, -0.05f);
 
             TextMeshPro tmp = go.AddComponent<TextMeshPro>();
             tmp.text = card.CardName;
             tmp.fontSize = 2.4f;
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = new Color(0f, 0f, 0f, 0.60f);
-            tmp.enableWordWrapping = true;
-            tmp.rectTransform.sizeDelta = new Vector2(5f, 3f);
+            tmp.color = new(0f, 0f, 0f, 0.60f);
+            tmp.textWrappingMode = TextWrappingModes.Normal;
+            tmp.rectTransform.sizeDelta = new(5f, 3f);
 
             // sits above the tile below player tokens.
             MeshRenderer mr = go.GetComponent<MeshRenderer>();
@@ -237,14 +237,14 @@ public class GridManager : MonoBehaviour
 
     private void ApplySpawnPointHighlights()
     {
-        Color[] characterColors = new Color[]
+        Color[] characterColors =
         {
-            new Color(1f, 0.2f, 0.2f),    // Miss Scarlet
-            new Color(1f, 0.8f, 0f),      // Col Mustard
-            new Color(0.9f, 0.9f, 0.9f),  // Mrs White
-            new Color(0.2f, 0.8f, 0.2f),  // Mr Green
-            new Color(0.2f, 0.2f, 1f),    // Mrs Peacock
-            new Color(0.6f, 0.2f, 0.8f),  // Prof Plum
+            new(1f, 0.2f, 0.2f),    // Miss Scarlet
+            new(1f, 0.8f, 0f),      // Col Mustard
+            new(0.9f, 0.9f, 0.9f),  // Mrs White
+            new(0.2f, 0.8f, 0.2f),  // Mr Green
+            new(0.2f, 0.2f, 1f),    // Mrs Peacock
+            new(0.6f, 0.2f, 0.8f),  // Prof Plum
         };
 
         for (int i = 0; i < 6; i++)
@@ -263,23 +263,21 @@ public class GridManager : MonoBehaviour
         char c = char.ToUpper(lines[invertedY][x]);
         if (char.IsDigit(c)) return Tile.TileType.Spawn;
 
-        switch (c)
+        return c switch
         {
-            case 'W': return Tile.TileType.Wall;
-            case 'R': return Tile.TileType.Room;
-            case 'D': return Tile.TileType.Door;
-            case 'B': return Tile.TileType.Wall;
-            case 'C':
-            case 'F': return Tile.TileType.Cellar;
-            case 'X': return Tile.TileType.Invalid;
-            case 'H': return Tile.TileType.Hallway;
-            default: return Tile.TileType.Invalid;
-        }
+            'W' or 'B' => Tile.TileType.Wall,
+            'R' => Tile.TileType.Room,
+            'D' => Tile.TileType.Door,
+            'C' or 'F' => Tile.TileType.Cellar,
+            'X' => Tile.TileType.Invalid,
+            'H' => Tile.TileType.Hallway,
+            _ => Tile.TileType.Invalid
+        };
     }
 
     public List<Tile> GetWalkableNeighbors(int x, int y)
     {
-        List<Tile> neighbors = new List<Tile>();
+        List<Tile> neighbors = new();
         if (IsValid(x, y + 1)) neighbors.Add(_grid[x, y + 1]);
         if (IsValid(x, y - 1)) neighbors.Add(_grid[x, y - 1]);
         if (IsValid(x + 1, y)) neighbors.Add(_grid[x + 1, y]);
@@ -315,7 +313,7 @@ public class GridManager : MonoBehaviour
     // RE: movement room tiles that have Card data assigned - for a.i
     public List<Tile> GetRoomTilesWithData()
     {
-        List<Tile> result = new List<Tile>();
+        List<Tile> result = new();
         for (int x = 0; x < GridWidth; x++)
             for (int y = 0; y < GridHeight; y++)
             {
