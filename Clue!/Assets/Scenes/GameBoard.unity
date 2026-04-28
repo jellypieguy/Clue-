@@ -7803,6 +7803,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd2cb0ecdd05c37448cfffca2e05ea5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIManager
+  currentPlayerText: {fileID: 515375524}
+  rollDiceButton: {fileID: 1988602591}
+  endTurnButton: {fileID: 1350319070}
+  suggestButton: {fileID: 2075934281}
+  accuseButton: {fileID: 22215560}
+  logText: {fileID: 1986670946}
+  logScrollRect: {fileID: 1189824553}
+  suggestionPanel: {fileID: 1119877002}
+  suspectDropdown: {fileID: 1455142656}
+  weaponDropdown: {fileID: 1965869979}
+  roomLabel: {fileID: 217627567}
+  confirmSuggestionButton: {fileID: 347502295}
+  cancelSuggestionButton: {fileID: 25395101}
+  accusationPanel: {fileID: 2085484977}
+  accuseSuspectDropdown: {fileID: 564048399}
+  accuseWeaponDropdown: {fileID: 692764571}
+  accuseRoomDropdown: {fileID: 101129671}
+  confirmAccusationButton: {fileID: 1387225740}
+  cancelAccusationButton: {fileID: 1973086749}
+  cardRevealPanel: {fileID: 520726032}
+  cardRevealText: {fileID: 658133552}
+  cardRevealImage: {fileID: 1307197509}
+  cardRevealOKButton: {fileID: 223288273}
+  gameOverPanel: {fileID: 2052513519}
+  gameOverText: {fileID: 948865758}
+  replayButton: {fileID: 59795613}
 --- !u!4 &1438233440
 Transform:
   m_ObjectHideFlags: 0

@@ -191,4 +191,86 @@ public class UIManager : MonoBehaviour
         PopulateDropdown(suspectDropdown, DeckManager.Instance.AllSuspects);
         PopulateDropdown(weaponDropdown, DeckManager.Instance.AllWeapons);
 
-        PlayerCon
+        PlayerController current = TurnManager.Instance.CurrentPlayer;
+        CardData currentRoom = current?.CurrentTile?.RoomData;
+        if (roomLabel != null)
+            roomLabel.text = currentRoom != null ? $"in {currentRoom.CardName}" : "in [no room]";
+
+        SetSuggestionPanel(true);
+    }
+
+    private void OnAccuseClicked()
+    {
+        PopulateDropdown(accuseSuspectDropdown, DeckManager.Instance.AllSuspects);
+        PopulateDropdown(accuseWeaponDropdown, DeckManager.Instance.AllWeapons);
+        PopulateDropdown(accuseRoomDropdown, DeckManager.Instance.AllActiveRooms);
+        SetAccusationPanel(true);
+    }
+
+    private void OnConfirmSuggestion()
+    {
+        CardData suspect = DeckManager.Instance.AllSuspects[suspectDropdown.value];
+        CardData weapon  = DeckManager.Instance.AllWeapons[weaponDropdown.value];
+        SetSuggestionPanel(false);
+        GameManager.Instance.HumanSuggestion(suspect,weapon);
+    }
+
+    private void OnCancelSuggestion()
+    {
+        SetSuggestionPanel(false);
+    }
+
+    private void OnConfirmAccusation()
+    {
+        CardData suspect = DeckManager.Instance.AllSuspects[accuseSuspectDropdown.value];
+        CardData weapon  = DeckManager.Instance.AllWeapons[accuseWeaponDropdown.value];
+        CardData room    = DeckManager.Instance.AllActiveRooms[accuseRoomDropdown.value];
+        SetAccusationPanel(false);
+        GameManager.Instance.HumanAccusation(suspect, weapon, room);
+    }
+
+    private void OnCancelAccusation()
+    {
+        SetAccusationPanel(false);
+    }
+
+    private void OnCardRevealOK()
+    {
+        SetCardRevealPanel(false);
+    }
+
+    private void OnReplayClicked()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene(
+            UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
+    }
+
+    private void PopulateDropdown(TMP_Dropdown dropdown, List<CardData> cards)
+    {
+        if (dropdown == null) return;
+        dropdown.ClearOptions();
+        List<string> names = new List<string>();
+        foreach (CardData c in cards) names.Add(c.CardName);
+        dropdown.AddOptions(names);
+    }
+
+    private void SetSuggestionPanel(bool active)
+    {
+        if (suggestionPanel != null) suggestionPanel.SetActive(active);
+    }
+
+    private void SetAccusationPanel(bool active)
+    {
+        if (accusationPanel != null) accusationPanel.SetActive(active);
+    }
+
+    private void SetCardRevealPanel(bool active)
+    {
+        if (cardRevealPanel != null) cardRevealPanel.SetActive(active);
+    }
+
+    private void SetGameOverPanel(bool active)
+    {
+        if (gameOverPanel != null) gameOverPanel.SetActive(active);
+    }
+}
