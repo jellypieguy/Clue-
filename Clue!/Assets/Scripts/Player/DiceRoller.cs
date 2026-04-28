@@ -1,35 +1,90 @@
 using UnityEngine;
+using TMPro;
 using System;
+using System.Collections;
 
+// olls two d6 add short tumble animation first
 public class DiceRoller : MonoBehaviour
 {
-    // Singleton instance so any script can trigger a dice roll
-    public static DiceRoller instance { get; private set; }
+    public static DiceRoller Instance { get; private set; }
 
-    // Broadcasts the dice result to any subscribed listeners (e.g. UI)
     public event Action<int> OnDiceRolled;
+
+    [Tooltip("dice panel text  — shows face during the anime.")]
+    [SerializeField] private TextMeshProUGUI _diceDisplay;
+
+    [Tooltip("How long the roll lasts before the result(seconds).")]
+    [SerializeField] private float _rollDuration = 1.2f;
+
+    // blocks double roll 
+    private bool _rolling = false;
 
     private void Awake()
     {
-        if (instance != null && instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        instance = this;
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
     }
 
-    // Rolls a six-sided die and advances the game state to Moving
     public void RollDice()
     {
-        // Only allow rolling during the correct game state
-        if (GameManager.Instance == null) return;
-        if (GameManager.Instance.CurrentState != GameManager.GameState.WaitingForRoll)
+        if (GameManager.Instance == null)
+        {
+            Debug.LogError("DiceRoller: GameManager missing.");
             return;
+        }
 
-        int result = UnityEngine.Random.Range(1, 7); // 1 to 6 inclusive
-        Debug.Log("Dice rolled: " + result);
-        OnDiceRolled?.Invoke(result);
+        if (GameManager.Instance.CurrentState != GameManager.GameState.WaitingForRoll)
+        {
+            Debug.Log($"DiceRoller: Ignored state is {GameManager.Instance.CurrentState}.");
+            return;
+        }
+
+        if (_rolling) return;
+
+        int d1 = UnityEngine.Random.Range(1, 7);
+        int d2 = UnityEngine.Random.Range(1, 7);
+        int total = d1 + d2;
+
+        Debug.Log($"DiceRoller: {d1} + {d2} = {total}.");
+
+        if (TurnManager.Instance?.CurrentPlayer != null)
+            UIManager.Instance?.AddLogEvent($"{TurnManager.Instance.CurrentPlayer.Character} rolled {total}.");
+
+        AudioManager.Instance?.PlayDiceRoll();
+        StartCoroutine(AnimateRoll(d1, d2, total));
+    }
+
+    // roll through random values, then locks to result
+    private IEnumerator AnimateRoll(int finalD1, int finalD2, int total)
+    {
+        _rolling = true;
+
+        float elapsed = 0f;
+        float interval = 0.06f; // start fast
+
+        while (elapsed < _rollDuration)
+        {
+            ShowFaces(UnityEngine.Random.Range(1, 7), UnityEngine.Random.Range(1, 7));
+
+            yield return new WaitForSeconds(interval);
+            elapsed += interval;
+            // frames get longer.
+            interval = Mathf.Min(interval + 0.012f, 0.22f);
+        }
+
+        // shows actual dice val
+        ShowFaces(finalD1, finalD2);
+
+        _rolling = false;
+
+        OnDiceRolled?.Invoke(total);
         GameManager.Instance.ChangeState(GameManager.GameState.Moving);
+    }
+
+    // changes the text
+    private void ShowFaces(int d1, int d2)
+    {
+        if (_diceDisplay != null)
+            _diceDisplay.text = $"[ {d1} ]  [ {d2} ]";
     }
 }
