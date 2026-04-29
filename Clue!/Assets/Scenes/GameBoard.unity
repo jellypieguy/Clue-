@@ -5983,6 +5983,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4fe68c78a9d64043a407dd15a81de35, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  _musicSource: {fileID: 0}
+  _sfxSource: {fileID: 0}
 --- !u!114 &1040057364
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6078,6 +6080,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   suggestionSystem: {fileID: 0}
   aiAgent: {fileID: 0}
+  suggestionUI: {fileID: 0}
 --- !u!4 &1040057369
 Transform:
   m_ObjectHideFlags: 0
@@ -10291,7 +10294,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 14
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
