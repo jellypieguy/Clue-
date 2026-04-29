@@ -185,7 +185,7 @@ public class UIManager : MonoBehaviour
     private void OnRollDiceClicked()
     {
         if (DiceRoller.Instance != null)
-            DiceRoller.Instance.RollDice();
+            DiceRoller.Instance.RollDiceForHuman();
     }
 
     private void OnEndTurnClicked()
