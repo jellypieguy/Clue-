@@ -625,7 +625,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40dfe747777ad904881973e5caf851f5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DetectiveNotepad
-  suspectsTabButton: {fileID: 0}
+  suspectsTabButton: {fileID: 2029506815}
   weaponsTabButton: {fileID: 403600872}
   roomsTabButton: {fileID: 605812571}
   contentArea: {fileID: 898471538}
