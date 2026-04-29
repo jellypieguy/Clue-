@@ -22,7 +22,7 @@ public class GameManager : MonoBehaviour
     [Header("System References (leave empty to auto-find)")]
     [SerializeField] private SuggestionSystem suggestionSystem;
     [SerializeField] private AIAgent aiAgent;
-    [SerializeField] private SuggestionUI suggestionUI;
+    [SerializeField] private UIManager uiManager;
 
     private void Awake()
     {
@@ -100,7 +100,7 @@ public class GameManager : MonoBehaviour
         // Trigger UI popups for specific states
         if (newState == GameState.Suggesting && current != null && current.IsHuman)
         {
-            if (suggestionUI != null) suggestionUI.Show();
+            UIManager.Instance?.AddLogEvent("Make a suggestion");
         }
 
         switch (newState)
