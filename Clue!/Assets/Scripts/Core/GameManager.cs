@@ -22,6 +22,7 @@ public class GameManager : MonoBehaviour
     [Header("System References (leave empty to auto-find)")]
     [SerializeField] private SuggestionSystem suggestionSystem;
     [SerializeField] private AIAgent aiAgent;
+    [SerializeField] private SuggestionUI suggestionUI;
 
     private void Awake()
     {
@@ -97,7 +98,7 @@ public class GameManager : MonoBehaviour
         if (current == null) return;
 
         // Trigger UI popups for specific states
-        if (newState == GameState.Suggesting && activePlayer != null && activePlayer.IsHuman)
+        if (newState == GameState.Suggesting && current != null && current.IsHuman)
         {
             if (suggestionUI != null) suggestionUI.Show();
         }

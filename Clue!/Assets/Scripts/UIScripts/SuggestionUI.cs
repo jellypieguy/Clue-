@@ -33,10 +33,8 @@ public class SuggestionUI : MonoBehaviour
         CardData selectedSuspect = DeckManager.Instance.AllSuspects[suspectDropdown.value];
         CardData selectedWeapon = DeckManager.Instance.AllWeapons[weaponDropdown.value];
 
-        //  room is set to players coods
-        CardData currentRoom = GameManager.Instance.GetCurrentPlayerRoom();
-
-        GameManager.Instance.HumanSuggestion(selectedSuspect, selectedWeapon, currentRoom);
+        // The GameManager handles pulling the room from the player's current tile
+        GameManager.Instance.HumanSuggestion(selectedSuspect, selectedWeapon);
         panel.SetActive(false);
     }
 }
