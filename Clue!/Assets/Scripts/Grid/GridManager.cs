@@ -142,6 +142,7 @@ public class GridManager : MonoBehaviour
         AssignRoomData();
         AssignSecretPassages();
         AddRoomLabels();
+        ApplyGameSettings();
     }
 
     // 2nd pass after gen tags each room tile with its data via grid pos

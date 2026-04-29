@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour
     [Header("System References (leave empty to auto-find)")]
     [SerializeField] private SuggestionSystem suggestionSystem;
     [SerializeField] private AIAgent aiAgent;
+    [SerializeField] private SuggestionUI suggestionUI;
 
     private void Awake()
     {
@@ -61,11 +62,11 @@ public class GameManager : MonoBehaviour
 
         // Get player settings from GameSettings (default to 6 players, 1 human if not found)
         int totalPlayers = 6;
-        int humanCount   = 1;
+        int humanCount = 1;
         if (GameSettings.Instance != null)
         {
             totalPlayers = GameSettings.Instance.TotalPlayers;
-            humanCount   = GameSettings.Instance.HumanPlayerCount;
+            humanCount = GameSettings.Instance.HumanPlayerCount;
         }
 
         // Verify TurnManager exists
@@ -110,7 +111,12 @@ public class GameManager : MonoBehaviour
 
         if (current == null) return;
 
-        // Handle different game states based on whether player is human or AI
+        // Trigger UI popups for specific states
+        if (newState == GameState.Suggesting && current != null && current.IsHuman)
+        {
+            if (suggestionUI != null) suggestionUI.Show();
+        }
+
         switch (newState)
         {
             case GameState.WaitingForRoll:
@@ -489,7 +495,7 @@ public class GameManager : MonoBehaviour
     private bool CheckAccusation(CardData suspect, CardData weapon, CardData room)
     {
         return suspect == DeckManager.Instance.Murderer
-            && weapon  == DeckManager.Instance.MurderWeapon
-            && room    == DeckManager.Instance.MurderRoom;
+            && weapon == DeckManager.Instance.MurderWeapon
+            && room == DeckManager.Instance.MurderRoom;
     }
 }

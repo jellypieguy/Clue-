@@ -1,11 +1,14 @@
 using UnityEngine;
 
 // PLACEHOLDER AudioManager so the project compiles.
-// Stubs out the audio calls until someone builds the real audio system.
-// Currently just logs to the Console instead of playing sound effects.
+// Currently just logs to the Console instead of playing sound effects
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
+
+    [Header("Audio Sources")]
+    [SerializeField] private AudioSource _musicSource;
+    [SerializeField] private AudioSource _sfxSource;
 
     private void Awake()
     {
@@ -15,6 +18,28 @@ public class AudioManager : MonoBehaviour
             return;
         }
         Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        // Auto-create sources if missing
+        if (_musicSource == null) _musicSource = gameObject.AddComponent<AudioSource>();
+        if (_sfxSource == null) _sfxSource = gameObject.AddComponent<AudioSource>();
+
+        _musicSource.loop = true;
+        _musicSource.playOnAwake = true;
+    }
+
+    public void SetMusicVolume(float volume)
+    {
+        if (_musicSource != null) _musicSource.volume = volume;
+    }
+
+    public void ToggleMusic(bool isOn)
+    {
+        if (_musicSource != null)
+        {
+            if (isOn) _musicSource.Play();
+            else _musicSource.Pause();
+        }
     }
 
     // Plays a footstep sound for player movement.
