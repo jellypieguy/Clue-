@@ -10,8 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 8407100882194127693}
   - component: {fileID: 1856468753028343922}
-  - component: {fileID: 2614570968078328326}
-  - component: {fileID: 7322323043364107450}
+  - component: {fileID: 888261712339100018}
+  - component: {fileID: 903019803428743414}
+  - component: {fileID: 84440952696047935}
   m_Layer: 0
   m_Name: PlayerToken
   m_TagString: Untagged
@@ -93,7 +94,7 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &2614570968078328326
+--- !u!114 &888261712339100018
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -102,12 +103,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 767647412609129704}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a7bd8c9dfb7c81549a6fd0c2995d7b41, type: 3}
+  m_Script: {fileID: 11500000, guid: 5d560f833a9104141be0ca6bf51f803d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   Character: 0
   IsHuman: 1
---- !u!114 &7322323043364107450
+--- !u!114 &903019803428743414
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -116,6 +117,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 767647412609129704}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c5e0d8e53154f4b42988730e893595c9, type: 3}
+  m_Script: {fileID: 11500000, guid: 06bc84c18e92b9146b5174b60a44b11f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHand
+--- !u!114 &84440952696047935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 767647412609129704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77d0c632167d2ec46a7c080badaee550, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Player
+  PlayerName: 
+  PlayerColour: {r: 0, g: 0, b: 0, a: 0}
