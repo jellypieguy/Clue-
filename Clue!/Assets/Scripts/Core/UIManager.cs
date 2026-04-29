@@ -94,7 +94,14 @@ public class UIManager : MonoBehaviour
         SetCardRevealPanel(false);
         SetGameOverPanel(false);
 
-        UpdateButtonStates(GameManager.GameState.Setup);
+        // Initialize display with whatever state the game is already in
+        if (TurnManager.Instance != null && TurnManager.Instance.CurrentPlayer != null)
+            HandleTurnChanged(TurnManager.Instance.CurrentPlayer);
+
+        if (GameManager.Instance != null)
+            UpdateButtonStates(GameManager.Instance.CurrentState);
+        else
+            UpdateButtonStates(GameManager.GameState.Setup);
     }
 
     private void OnDestroy()
