@@ -367,8 +367,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -32.7}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchoredPosition: {x: 10, y: -39}
+  m_SizeDelta: {x: 189, y: 49.5431}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &22215560
 MonoBehaviour:
@@ -2331,7 +2331,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47a9444c41ae76d4aae9a8caab4cc4a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameBootstrapper
-  boardRenderer: {fileID: 1723979658}
 --- !u!4 &241299974
 Transform:
   m_ObjectHideFlags: 0
@@ -7775,6 +7774,76 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1407703330}
   m_CullTransparentMesh: 1
+--- !u!1 &1438233438
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1438233440}
+  - component: {fileID: 1438233439}
+  m_Layer: 0
+  m_Name: UIManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1438233439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1438233438}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd2cb0ecdd05c37448cfffca2e05ea5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIManager
+  currentPlayerText: {fileID: 515375524}
+  rollDiceButton: {fileID: 1988602591}
+  endTurnButton: {fileID: 1350319070}
+  suggestButton: {fileID: 2075934281}
+  accuseButton: {fileID: 22215560}
+  logText: {fileID: 1986670946}
+  logScrollRect: {fileID: 1189824553}
+  suggestionPanel: {fileID: 1119877002}
+  suspectDropdown: {fileID: 1455142656}
+  weaponDropdown: {fileID: 1965869979}
+  roomLabel: {fileID: 217627567}
+  confirmSuggestionButton: {fileID: 347502295}
+  cancelSuggestionButton: {fileID: 25395101}
+  accusationPanel: {fileID: 2085484977}
+  accuseSuspectDropdown: {fileID: 564048399}
+  accuseWeaponDropdown: {fileID: 692764571}
+  accuseRoomDropdown: {fileID: 101129671}
+  confirmAccusationButton: {fileID: 1387225740}
+  cancelAccusationButton: {fileID: 1973086749}
+  cardRevealPanel: {fileID: 520726032}
+  cardRevealText: {fileID: 658133552}
+  cardRevealImage: {fileID: 1307197509}
+  cardRevealOKButton: {fileID: 223288273}
+  gameOverPanel: {fileID: 2052513519}
+  gameOverText: {fileID: 948865758}
+  replayButton: {fileID: 59795613}
+--- !u!4 &1438233440
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1438233438}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 6.53564, y: -4.40968, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1440326135
 GameObject:
   m_ObjectHideFlags: 0
@@ -8712,8 +8781,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0.000045776367, y: 0}
+  m_SizeDelta: {x: 5.4287, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1638760621
 MonoBehaviour:
@@ -8762,8 +8831,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 25
+  m_fontSizeBase: 25
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -9069,8 +9138,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6b3ddf4a70dcc54f9cd57870a22b7c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoardRenderer
-  tilePrefab: {fileID: 6406431236784797282, guid: d12e95515511b71429f824925ed966bb, type: 3}
-  tileSize: 0.9
 --- !u!4 &1723979659
 Transform:
   m_ObjectHideFlags: 0
@@ -9170,8 +9237,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 25
+  m_fontSizeBase: 25
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -10420,7 +10487,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
   m_AnchoredPosition: {x: -10, y: 0}
-  m_SizeDelta: {x: 250, y: 150}
+  m_SizeDelta: {x: 308.179, y: 196.9639}
   m_Pivot: {x: 1, y: 0}
 --- !u!114 &1981370693
 MonoBehaviour:
@@ -11058,8 +11125,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 32}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchoredPosition: {x: 10, y: 45}
+  m_SizeDelta: {x: 198.0004, y: 47}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2075934281
 MonoBehaviour:
@@ -11380,3 +11447,4 @@ SceneRoots:
   - {fileID: 241299974}
   - {fileID: 1140144613}
   - {fileID: 790490909}
+  - {fileID: 1438233440}
