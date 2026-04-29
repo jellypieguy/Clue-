@@ -6179,6 +6179,7 @@ GameObject:
   - component: {fileID: 1040057363}
   - component: {fileID: 1040057362}
   - component: {fileID: 1040057361}
+  - component: {fileID: 1040057370}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -6335,6 +6336,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1040057370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1040057360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4828ce8233ad8d469c608e60bd9847e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GridManager
+  boardMapFile: {fileID: 4900000, guid: 78b28077d12642d41aa4632e2738d711, type: 3}
+  tilePrefab: {fileID: 5749159086536049317, guid: d533e897cdb5bbf459b4580e894398f0, type: 3}
+  _roomCards:
+  - {fileID: 11400000, guid: 4f84999d561af2c4a940ab79b83ca414, type: 2}
+  - {fileID: 11400000, guid: 37bad75d107576d41a13de31bc1a9e99, type: 2}
+  - {fileID: 11400000, guid: f59013f89fb5b1f40b0551ec98e6075a, type: 2}
+  - {fileID: 11400000, guid: 8f9d5c63ebdbf9245a612132638c0284, type: 2}
+  - {fileID: 11400000, guid: 9bfc157c0e1f30140bd52f7c695c4c80, type: 2}
+  - {fileID: 11400000, guid: 1f5d6a7610e043c4eac21c1ff25b4f0b, type: 2}
+  - {fileID: 11400000, guid: b644b1a027177c14095b3a2607504f3e, type: 2}
+  - {fileID: 11400000, guid: 0103a47ec77bcf54f97b50ee2e8af0f2, type: 2}
+  - {fileID: 11400000, guid: 1b63a1869582a2c4481687a0068baa2f, type: 2}
 --- !u!1 &1048618127
 GameObject:
   m_ObjectHideFlags: 0
@@ -9719,62 +9744,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1695663729}
   m_CullTransparentMesh: 1
---- !u!1 &1723979657
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1723979659}
-  - component: {fileID: 1723979658}
-  m_Layer: 0
-  m_Name: board
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1723979658
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1723979657}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4828ce8233ad8d469c608e60bd9847e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BoardRenderer
-  boardMapFile: {fileID: 4900000, guid: 78b28077d12642d41aa4632e2738d711, type: 3}
-  tilePrefab: {fileID: 5749159086536049317, guid: d533e897cdb5bbf459b4580e894398f0, type: 3}
-  _roomCards:
-  - {fileID: 11400000, guid: 4f84999d561af2c4a940ab79b83ca414, type: 2}
-  - {fileID: 11400000, guid: 37bad75d107576d41a13de31bc1a9e99, type: 2}
-  - {fileID: 11400000, guid: f59013f89fb5b1f40b0551ec98e6075a, type: 2}
-  - {fileID: 11400000, guid: 8f9d5c63ebdbf9245a612132638c0284, type: 2}
-  - {fileID: 11400000, guid: 9bfc157c0e1f30140bd52f7c695c4c80, type: 2}
-  - {fileID: 11400000, guid: 1f5d6a7610e043c4eac21c1ff25b4f0b, type: 2}
-  - {fileID: 11400000, guid: b644b1a027177c14095b3a2607504f3e, type: 2}
-  - {fileID: 11400000, guid: 0103a47ec77bcf54f97b50ee2e8af0f2, type: 2}
-  - {fileID: 11400000, guid: 1b63a1869582a2c4481687a0068baa2f, type: 2}
---- !u!4 &1723979659
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1723979657}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1736969366
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10366,6 +10335,8 @@ GameObject:
   - component: {fileID: 1817199378}
   - component: {fileID: 1817199377}
   - component: {fileID: 1817199380}
+  - component: {fileID: 1817199382}
+  - component: {fileID: 1817199383}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -10491,6 +10462,39 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &1817199382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1817199376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02e64e56be096884fad8fde607d8099e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::movement
+  moveSpeed: 20
+  smoothTime: 0.2
+  dragSensitivity: 1
+  minBounds: {x: -20, y: -20}
+  maxBounds: {x: 20, y: 20}
+--- !u!114 &1817199383
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1817199376}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87e7158e70cfb8e4989e18d5de7581aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::zoom
+  zoomSpeed: 0.5
+  smoothTime: 0.2
+  minZoomSize: 5
+  maxZoomSize: 25
 --- !u!1 &1827083631
 GameObject:
   m_ObjectHideFlags: 0
@@ -12338,7 +12342,6 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 1817199379}
-  - {fileID: 1723979659}
   - {fileID: 1140144613}
   - {fileID: 790490909}
   - {fileID: 1438233440}
