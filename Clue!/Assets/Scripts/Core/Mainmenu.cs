@@ -8,8 +8,8 @@ public class MainMenu : MonoBehaviour
     public GameObject optionsPanel;
 
     [Header("Scene Names")]
-    public string gameSceneName = "GameScene";   // Scene loaded when starting a new game
-    public string loadSceneName = "LoadScene";   // Scene loaded when continuing a saved game
+    public string gameSceneName = "GameBoard";   // loads game scence
+    public string loadSceneName = "LoadScene";   // loads saved game
 
     void Start()
     {
@@ -17,32 +17,32 @@ public class MainMenu : MonoBehaviour
         ShowMainMenu();
     }
 
-    // Loads the main game scene to begin a new game
+    //main game scene
     public void StartGame()
     {
         SceneManager.LoadScene(gameSceneName);
     }
 
-    // Loads the save/load scene for continuing a previous game
+    // continue previous game
     public void LoadGame()
     {
         SceneManager.LoadScene(loadSceneName);
     }
 
-    // Switches from the main menu panel to the options panel
+    // options and menu panel
     public void OpenOptions()
     {
         mainMenuPanel.SetActive(false);
         optionsPanel.SetActive(true);
     }
 
-    // Returns to the main menu from any sub-panel
+    // return back button
     public void BackToMenu()
     {
         ShowMainMenu();
     }
 
-    // Quits the application, with editor support for stopping play mode
+    //quits game
     public void QuitGame()
     {
         Debug.Log("Quit Game");
@@ -53,7 +53,7 @@ public class MainMenu : MonoBehaviour
 #endif
     }
 
-    // Shows the main menu panel and hides all others
+    // show main menu
     void ShowMainMenu()
     {
         mainMenuPanel.SetActive(true);

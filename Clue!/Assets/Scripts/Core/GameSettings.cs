@@ -35,6 +35,7 @@ public class GameSettings : MonoBehaviour
             return;
         }
         Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     // toggle in/out room of

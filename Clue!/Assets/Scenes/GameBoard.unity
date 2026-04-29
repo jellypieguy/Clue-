@@ -7031,9 +7031,7 @@ GameObject:
   - component: {fileID: 1040057368}
   - component: {fileID: 1040057367}
   - component: {fileID: 1040057366}
-  - component: {fileID: 1040057365}
   - component: {fileID: 1040057364}
-  - component: {fileID: 1040057363}
   - component: {fileID: 1040057362}
   - component: {fileID: 1040057361}
   - component: {fileID: 1040057370}
@@ -7068,22 +7066,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6ddb8cf6812c2ee4dbdf9592a04242f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SuggestionSystem
---- !u!114 &1040057363
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040057360}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c4fe68c78a9d64043a407dd15a81de35, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
-  _musicSource: {fileID: 0}
-  _sfxSource: {fileID: 0}
-  _menuMusic: {fileID: 0}
-  _gameMusic: {fileID: 0}
 --- !u!114 &1040057364
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7098,18 +7080,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DiceRoller
   _diceDisplay: {fileID: 894737270}
   _rollDuration: 1.2
---- !u!114 &1040057365
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040057360}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 744a67bdc569dc4418e5412c7a7ad069, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GameSettings
 --- !u!114 &1040057366
 MonoBehaviour:
   m_ObjectHideFlags: 0
