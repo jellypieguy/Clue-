@@ -1,10 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum AIDifficulty { Easy, Medium, Hard }
+
 //  setup screen rooms, player count whem game starts.
 public class GameSettings : MonoBehaviour
 {
     public static GameSettings Instance { get; private set; }
+
+    public AIDifficulty AIDifficultyLevel { get; private set; } = AIDifficulty.Easy;
 
     // NoP and how many of those bots
     public int TotalPlayers     { get; private set; } = 6;
@@ -20,6 +24,8 @@ public class GameSettings : MonoBehaviour
     }
 
     public void SetHumanCount(int n) => HumanPlayerCount = Mathf.Clamp(n, 1, TotalPlayers);
+
+    public void SetAIDifficulty(AIDifficulty diff) => AIDifficultyLevel = diff;
 
     private void Awake()
     {

@@ -9,6 +9,8 @@ public class AudioManager : MonoBehaviour
     [Header("Audio Sources")]
     [SerializeField] private AudioSource _musicSource;
     [SerializeField] private AudioSource _sfxSource;
+    [SerializeField] private AudioClip _menuMusic;
+    [SerializeField] private AudioClip _gameMusic;
 
     private void Awake()
     {
@@ -25,7 +27,26 @@ public class AudioManager : MonoBehaviour
         if (_sfxSource == null) _sfxSource = gameObject.AddComponent<AudioSource>();
 
         _musicSource.loop = true;
-        _musicSource.playOnAwake = true;
+        _musicSource.playOnAwake = false;
+
+        // Start with menu music if available
+        if (_menuMusic != null)
+        {
+            _musicSource.clip = _menuMusic;
+            _musicSource.Play();
+        }
+    }
+
+    public void PlayMenuMusic() => SwitchMusic(_menuMusic);
+    public void PlayGameMusic() => SwitchMusic(_gameMusic);
+
+    private void SwitchMusic(AudioClip newClip)
+    {
+        if (newClip == null || _musicSource.clip == newClip) return;
+
+        _musicSource.Stop();
+        _musicSource.clip = newClip;
+        _musicSource.Play();
     }
 
     public void SetMusicVolume(float volume)

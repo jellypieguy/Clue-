@@ -37,8 +37,8 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        if (suggestionSystem == null) suggestionSystem = FindObjectOfType<SuggestionSystem>();
-        if (aiAgent == null) aiAgent = FindObjectOfType<AIAgent>();
+        if (suggestionSystem == null) suggestionSystem = FindFirstObjectByType<SuggestionSystem>();
+        if (aiAgent == null) aiAgent = FindFirstObjectByType<AIAgent>();
 
         SetupGame();
     }
@@ -75,6 +75,7 @@ public class GameManager : MonoBehaviour
             GridManager.Instance.ApplyGameSettings();
 
         TurnManager.Instance.StartFirstTurn();
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayGameMusic();
 
         Debug.Log($"[GameManager] Game setup complete. {humanCount} human(s), {totalPlayers - humanCount} AI.");
         TurnManager.Instance.StartFirstTurn();
@@ -189,6 +190,11 @@ public class GameManager : MonoBehaviour
         int playerIndex = TurnManager.Instance.GetPlayers().IndexOf(current);
         CardData shownCard = aiAgent.MakeSuggestion(current, suggestionSystem,playerIndex,TurnManager.Instance.GetPlayers());
         
+        if (shownCard != null)
+        {
+            aiAgent.RecordShownCard(current, shownCard);
+        }
+
         if (aiAgent.ShouldAccuse(current))
             ChangeState(GameState.Accusing);
         else
@@ -203,7 +209,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        CardData[] accusation = aiAgent.MakeAccusation();
+        CardData[] accusation = aiAgent.MakeAccusation(current);
         bool correct = CheckAccusation(accusation[0], accusation[1], accusation[2]);
 
         if (correct)

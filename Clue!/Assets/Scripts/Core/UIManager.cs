@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 
 // Manages all in-game UI: HUD, popups, event log, panels.
 // Wires Inspector-assigned UI elements to game logic via singleton calls.
@@ -50,6 +51,15 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private TextMeshProUGUI gameOverText;
     [SerializeField] private Button replayButton;
+
+    // ── Pause panel ──────────────────────────────────────────────────────
+    [Header("Pause Panel")]
+    [SerializeField] private GameObject pausePanel;
+    [SerializeField] private Slider volumeSlider;
+    [SerializeField] private Toggle muteToggle;
+    [SerializeField] private Button resumeButton;
+
+    private bool isPaused = false;
     
     private void Awake()
     {
@@ -79,6 +89,10 @@ public class UIManager : MonoBehaviour
         if (cardRevealOKButton != null)          cardRevealOKButton.onClick.AddListener(OnCardRevealOK);
         if (replayButton != null)                replayButton.onClick.AddListener(OnReplayClicked);
 
+        if (resumeButton != null)                resumeButton.onClick.AddListener(TogglePauseMenu);
+        if (volumeSlider != null)                volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
+        if (muteToggle != null)                  muteToggle.onValueChanged.AddListener(OnMuteToggled);
+
         if (GameManager.Instance != null)
             GameManager.Instance.OnGameStateChanged += HandleGameStateChanged;
 
@@ -89,6 +103,7 @@ public class UIManager : MonoBehaviour
         SetAccusationPanel(false);
         SetCardRevealPanel(false);
         SetGameOverPanel(false);
+        if (pausePanel != null) pausePanel.SetActive(false);
 
         // Initialize display with whatever state the game is already in
         if (TurnManager.Instance != null && TurnManager.Instance.CurrentPlayer != null)
@@ -98,6 +113,37 @@ public class UIManager : MonoBehaviour
             UpdateButtonStates(GameManager.Instance.CurrentState);
         else
             UpdateButtonStates(GameManager.GameState.Setup);
+    }
+
+    private void Update()
+    {
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            TogglePauseMenu();
+        }
+    }
+
+    public void TogglePauseMenu()
+    {
+        isPaused = !isPaused;
+        if (pausePanel != null)
+        {
+            pausePanel.SetActive(isPaused);
+        }
+
+        // Pause or resume game time
+        Time.timeScale = isPaused ? 0f : 1f;
+    }
+
+    private void OnVolumeChanged(float value)
+    {
+        if (AudioManager.Instance != null) AudioManager.Instance.SetMusicVolume(value);
+    }
+
+    private void OnMuteToggled(bool isMuted)
+    {
+        // If the toggle is "Muted", turning it on means turning music OFF
+        if (AudioManager.Instance != null) AudioManager.Instance.ToggleMusic(!isMuted);
     }
 
     public void ShowCardReveal(string showerName, CardData card)
