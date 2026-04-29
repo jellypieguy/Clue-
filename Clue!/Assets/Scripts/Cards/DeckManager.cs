@@ -107,4 +107,14 @@ public class DeckManager : MonoBehaviour
 
         Debug.Log("DeckManager: All cards dealt.");
     }
+
+    // Helper for Notepad UI to get a consistent list of all possible cards
+    public List<CardData> GetAllCardsOrdered()
+    {
+        List<CardData> combined = new List<CardData>();
+        combined.AddRange(allSuspects);
+        combined.AddRange(allWeapons);
+        combined.AddRange(allRooms);
+        return combined;
+    }
 }
