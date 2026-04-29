@@ -2,21 +2,25 @@ using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
 
-// tile prefab
+// tile prefab. one instance per cell of the grid
+// movement rules:
+// - hallway, spawn = walkable freely
+// - door = walkable, but stepping on it means entering the room (Pathfinder treats as terminal)
+// - room interior = NOT directly walkable (must enter via door)
+// - wall, invalid, cellar = blocked
 public class Tile : MonoBehaviour
 {
     public enum TileType
     {
-        Hallway, Wall, Room, Door, Cellar, Invalid, Spawn
+        Hallway, Wall, Room, Door, Cellar, Invalid, Spawn, SecretPassage
     }
-
     public int GridX { get; private set; }
     public int GridY { get; private set; }
     public bool IsWalkable { get; private set; }
     public TileType Type { get; private set; }
 
     [Header("room data")]
-    [Tooltip("set card data here.")]
+    [Tooltip("Set card data here. Doors also get RoomData (their adjacent room).")]
     public CardData RoomData;
 
     [Tooltip("For corner rooms only — the secret passage destination.")]
@@ -24,20 +28,20 @@ public class Tile : MonoBehaviour
 
     private SpriteRenderer _sr;
     private Color _originalColor;
-    /// tiles coods and data type
+
     public void Setup(int x, int y, TileType type, char mapChar = ' ')
     {
         GridX = x;
         GridY = y;
         Type = type;
 
-        // tiles have colliders so m1  can be detected
         if (GetComponent<Collider2D>() == null)
             gameObject.AddComponent<BoxCollider2D>();
 
         transform.localScale = new Vector3(0.98f, 0.98f, 1f);
 
-        IsWalkable = type == TileType.Hallway || type == TileType.Door || type == TileType.Spawn || type == TileType.Room;
+        // walkable: hallway, door, spawn. room interiors NOT directly walkable.
+        IsWalkable = type == TileType.Hallway || type == TileType.Door || type == TileType.Spawn || type == TileType.SecretPassage;
 
         _sr = GetComponent<SpriteRenderer>();
         if (_sr != null)
@@ -46,21 +50,21 @@ public class Tile : MonoBehaviour
             {
                 case TileType.Hallway:
                 case TileType.Spawn:
-                    _sr.color = new Color(1f, 1f, 0.85f); break; // white
+                    _sr.color = new Color(1f, 1f, 0.85f); break;     // cream
                 case TileType.Room:
-                    _sr.color = new Color(0.6f, 0.8f, 0.9f); break; //  blue
+                    _sr.color = new Color(0.6f, 0.8f, 0.9f); break;  // light blue
                 case TileType.Door:
-                    _sr.color = new Color(0.9f, 0.7f, 0.2f); break; // Gold
+                    _sr.color = new Color(0.9f, 0.7f, 0.2f); break;  // gold
                 case TileType.Cellar:
-                    _sr.color = new Color(0.6f, 0.1f, 0.1f); break; // Maroon
+                    _sr.color = new Color(0.6f, 0.1f, 0.1f); break;  // maroon
                 case TileType.Wall:
+                case TileType.SecretPassage:
+                    _sr.color = new Color(0.8f, 0.4f, 0.9f); break;  // purple
                 case TileType.Invalid:
-                    _sr.color = new Color(0.2f, 0.8f, 0.2f); break; // Green
+                    _sr.color = new Color(0.2f, 0.8f, 0.2f); break;  // green (outside board)
             }
             _originalColor = _sr.color;
         }
-
-        // logic display the char from the map file 
 
         TextMeshPro textMesh = GetComponentInChildren<TextMeshPro>();
         if (textMesh != null)
@@ -74,13 +78,13 @@ public class Tile : MonoBehaviour
         }
     }
 
-    // called by the gridman after grid gen hooks up the cluedo room
+    // called by GridManager after grid generation to hook up the room CardData
     public void SetRoomData(CardData roomData)
     {
         RoomData = roomData;
     }
 
-    // removes room from the game
+    // removes room from the game (greyed out)
     public void DisableAsInactive()
     {
         IsWalkable = false;

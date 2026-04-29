@@ -36,7 +36,13 @@ public static class Pathfinder
                     reachableTiles.Add(neighbor);
 
                     // enter a room but cant path thru  it
-                    if (neighbor.Type != Tile.TileType.Room)
+                    // Doors are terminal - you enter the room here, turn ends
+                    if (neighbor.Type != Tile.TileType.Room && neighbor.Type != Tile.TileType.Door)
+                        queue.Enqueue(new KeyValuePair<Tile, int>(neighbor, currentDistance + 1));
+                    
+                    if (neighbor.Type != Tile.TileType.Room && 
+                        neighbor.Type != Tile.TileType.Door &&
+                        neighbor.Type != Tile.TileType.SecretPassage)
                         queue.Enqueue(new KeyValuePair<Tile, int>(neighbor, currentDistance + 1));
                 }
             }

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
@@ -121,6 +122,7 @@ public class TurnManager : MonoBehaviour
     }
 
     // advance to the next player if not elim
+    
     private void PassTurnToNextPlayer()
     {
         if (_playersInGame.Count == 0) return;
@@ -131,7 +133,6 @@ public class TurnManager : MonoBehaviour
         do
         {
             int nextIndex = (_currentPlayerIndex + 1) % _playersInGame.Count;
-            // udates player index so player reflects the check
             _currentPlayerIndex = nextIndex;
 
             if (!CurrentPlayer.IsEliminated)
@@ -144,13 +145,17 @@ public class TurnManager : MonoBehaviour
         if (!foundActivePlayer)
         {
             Debug.LogError("ALL PLAYERS ELIMINATED! The murderer got away with it!");
-            Debug.Log("ALL PLAYERS ELIMINATED! The murderer got away with it!");
             GameManager.Instance.ChangeState(GameManager.GameState.GameOver);
             return;
         }
 
         Debug.Log($"TurnManager: Turn passed to {CurrentPlayer.Character}.");
-        // UI + Event handled by Index
+        // Defer by one frame so we exit the EndTurn event chain before firing WaitingForRoll
+        StartCoroutine(BeginNextTurn());
+    }
+    private IEnumerator BeginNextTurn()
+    {
+        yield return null; // wait one frame
         GameManager.Instance.ChangeState(GameManager.GameState.WaitingForRoll);
     }
 }

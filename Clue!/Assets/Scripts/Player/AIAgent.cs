@@ -30,15 +30,15 @@ public class AIAgent : MonoBehaviour
 
     // Makes a random suggestion using a random suspect, random weapon, and the AI's current room.
     // Caller must check the AI is actually in a room first.
-    public void MakeSuggestion(PlayerController aiPlayer, SuggestionSystem suggestionSystem,
-                                int playerIndex, List<PlayerController> allPlayers)
+    public CardData MakeSuggestion(PlayerController aiPlayer, SuggestionSystem suggestionSystem,
+        int playerIndex, List<PlayerController> allPlayers)
     {
         CardData currentRoom = aiPlayer.CurrentTile != null ? aiPlayer.CurrentTile.RoomData : null;
 
         if (currentRoom == null)
         {
             Debug.Log($"{aiPlayer.Character} is not in a room, cannot suggest.");
-            return;
+            return null;
         }
 
         List<CardData> suspects = DeckManager.Instance.AllSuspects;
@@ -47,14 +47,14 @@ public class AIAgent : MonoBehaviour
         if (suspects.Count == 0 || weapons.Count == 0)
         {
             Debug.LogWarning("AIAgent: No suspects or weapons available to suggest.");
-            return;
+            return null;
         }
 
         CardData chosenSuspect = suspects[Random.Range(0, suspects.Count)];
         CardData chosenWeapon  = weapons[Random.Range(0, weapons.Count)];
 
-        suggestionSystem.ProcessSuggestion(chosenSuspect, chosenWeapon, currentRoom,
-                                           playerIndex, allPlayers);
+        return suggestionSystem.ProcessSuggestion(chosenSuspect, chosenWeapon, currentRoom,
+            playerIndex, allPlayers);
     }
 
     // Always returns false for this random agent.

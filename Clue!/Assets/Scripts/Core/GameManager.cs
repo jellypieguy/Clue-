@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 using System;
 
 public class GameManager : MonoBehaviour
@@ -76,6 +77,30 @@ public class GameManager : MonoBehaviour
         TurnManager.Instance.StartFirstTurn();
 
         Debug.Log($"[GameManager] Game setup complete. {humanCount} human(s), {totalPlayers - humanCount} AI.");
+        TurnManager.Instance.StartFirstTurn();
+    
+        AutoMarkHumanHand(); // ← add this line at the end
+    
+        Debug.Log($"[GameManager] Game setup complete. {humanCount} human(s), {totalPlayers - humanCount} AI.");
+    }
+
+    private void AutoMarkHumanHand()
+    {
+        if (DetectiveNotepad.Instance == null) return;
+
+        List<PlayerController> players = TurnManager.Instance.GetPlayers();
+        foreach (PlayerController player in players)
+        {
+            if (!player.IsHuman) continue;
+
+            PlayerHand hand = player.GetComponent<PlayerHand>();
+            if (hand == null) continue;
+
+            foreach (CardData card in hand.Cards)
+                DetectiveNotepad.Instance.AutoMarkCard(card.CardName);
+
+            break; // only one human player
+        }
     }
 
     public void ChangeState(GameState newState)
@@ -96,12 +121,6 @@ public class GameManager : MonoBehaviour
         }
 
         if (current == null) return;
-
-        // Trigger UI popups for specific states
-        if (newState == GameState.Suggesting && current != null && current.IsHuman)
-        {
-            UIManager.Instance?.AddLogEvent("Make a suggestion");
-        }
 
         switch (newState)
         {
@@ -168,9 +187,8 @@ public class GameManager : MonoBehaviour
         }
 
         int playerIndex = TurnManager.Instance.GetPlayers().IndexOf(current);
-        aiAgent.MakeSuggestion(current, suggestionSystem,
-                               playerIndex, TurnManager.Instance.GetPlayers());
-
+        CardData shownCard = aiAgent.MakeSuggestion(current, suggestionSystem,playerIndex,TurnManager.Instance.GetPlayers());
+        
         if (aiAgent.ShouldAccuse(current))
             ChangeState(GameState.Accusing);
         else
@@ -214,8 +232,24 @@ public class GameManager : MonoBehaviour
         }
 
         int playerIndex = TurnManager.Instance.GetPlayers().IndexOf(current);
-        suggestionSystem.ProcessSuggestion(suspect, weapon, currentRoom,
-                                           playerIndex, TurnManager.Instance.GetPlayers());
+        CardData shownCard = suggestionSystem.ProcessSuggestion(suspect, weapon, currentRoom,
+            playerIndex, TurnManager.Instance.GetPlayers());
+
+        if (shownCard != null)
+        {
+            List<PlayerController> players = TurnManager.Instance.GetPlayers();
+            for (int i = 1; i < players.Count; i++)
+            {
+                int checkIndex = (playerIndex + i) % players.Count;
+                PlayerController checker = players[checkIndex];
+                PlayerHand hand = checker.GetComponent<PlayerHand>();
+                if (hand != null && hand.GetRefutingCards(suspect, weapon, currentRoom).Count > 0)
+                {
+                    UIManager.Instance?.ShowCardReveal(checker.Character.ToString(), shownCard);
+                    break;
+                }
+            }
+        }
     }
 
     public void HumanAccusation(CardData suspect, CardData weapon, CardData room)

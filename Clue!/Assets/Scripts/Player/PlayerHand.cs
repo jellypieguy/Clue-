@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerHand : MonoBehaviour
 {
     private List<CardData> _hand = new List<CardData>();
+    public IReadOnlyList<CardData> Cards => _hand; 
 
     public void AddCard(CardData card)
     {

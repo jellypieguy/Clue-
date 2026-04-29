@@ -20,11 +20,6 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Button suggestButton;
     [SerializeField] private Button accuseButton;
 
-    // ── Event log ────────────────────────────────────────────────────────
-    [Header("Event Log")]
-    [SerializeField] private TextMeshProUGUI logText;
-    [SerializeField] private ScrollRect logScrollRect;
-
     // ── Suggestion panel ─────────────────────────────────────────────────
     [Header("Suggestion Panel")]
     [SerializeField] private GameObject suggestionPanel;
@@ -55,20 +50,21 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private TextMeshProUGUI gameOverText;
     [SerializeField] private Button replayButton;
-
-    // ── Internal state ───────────────────────────────────────────────────
-    private List<string> _logMessages = new List<string>();
-    private const int MAX_LOG_LINES = 50;
-
+    
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
+    
+    private void OnDestroy()
+    {
+        if (GameManager.Instance != null)
+            GameManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
+        if (TurnManager.Instance != null)
+            TurnManager.Instance.OnPlayerTurnChanged -= HandleTurnChanged;
+    }
+    
 
     private void Start()
     {
@@ -104,30 +100,6 @@ public class UIManager : MonoBehaviour
             UpdateButtonStates(GameManager.GameState.Setup);
     }
 
-    private void OnDestroy()
-    {
-        if (GameManager.Instance != null)
-            GameManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
-        if (TurnManager.Instance != null)
-            TurnManager.Instance.OnPlayerTurnChanged -= HandleTurnChanged;
-    }
-
-    public void AddLogEvent(string message)
-    {
-        _logMessages.Add(message);
-        if (_logMessages.Count > MAX_LOG_LINES)
-            _logMessages.RemoveAt(0);
-
-        if (logText != null)
-            logText.text = string.Join("\n", _logMessages);
-
-        if (logScrollRect != null)
-        {
-            Canvas.ForceUpdateCanvases();
-            logScrollRect.verticalNormalizedPosition = 0f;
-        }
-    }
-
     public void ShowCardReveal(string showerName, CardData card)
     {
         if (cardRevealText != null)
@@ -135,9 +107,12 @@ public class UIManager : MonoBehaviour
         if (cardRevealImage != null && card.CardImage != null)
             cardRevealImage.sprite = card.CardImage;
 
+        // Auto-mark card as seen in detective notepad
+        if (DetectiveNotepad.Instance != null)
+            DetectiveNotepad.Instance.AutoMarkCard(card.CardName);
+
         SetCardRevealPanel(true);
     }
-
     public void ShowGameOver(string winnerName)
     {
         if (gameOverText != null)
@@ -175,8 +150,8 @@ public class UIManager : MonoBehaviour
             isHumanTurn && state == GameManager.GameState.Suggesting;
 
         if (accuseButton != null) accuseButton.interactable =
-            isHumanTurn && (state == GameManager.GameState.Suggesting
-                         || state == GameManager.GameState.Accusing);
+            isHumanTurn && state != GameManager.GameState.Setup
+                        && state != GameManager.GameState.GameOver;
 
         if (endTurnButton != null) endTurnButton.interactable =
             isHumanTurn && state == GameManager.GameState.Suggesting;
@@ -244,6 +219,7 @@ public class UIManager : MonoBehaviour
     private void OnCardRevealOK()
     {
         SetCardRevealPanel(false);
+        GameManager.Instance.ChangeState(GameManager.GameState.EndTurn); 
     }
 
     private void OnReplayClicked()

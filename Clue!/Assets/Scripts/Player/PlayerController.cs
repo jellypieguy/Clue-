@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// controls player input pathfinding and movement 
+// controls player input pathfinding and movement rules per Cluedo:
+// - walk freely on hallway/spawn tiles
+// - stepping on a door = entering the adjacent room (turn ends, switch to Suggesting)
+// - cannot walk into a room directly without a door
+// - cannot walk on walls or invalid tiles
 public class PlayerController : MonoBehaviour
 {
     public enum CharacterType
@@ -38,7 +42,6 @@ public class PlayerController : MonoBehaviour
         IsEliminated = true;
         Debug.Log($"{Character} has been Eliminated.");
 
-        // greys the player to marks removed
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (sr != null)
         {
@@ -96,7 +99,6 @@ public class PlayerController : MonoBehaviour
 
     private void HandleDiceRolled(int rollTotal)
     {
-        // care the roll if it's currently the player turn
         if (TurnManager.Instance != null && TurnManager.Instance.CurrentPlayer != this) return;
 
         _movementBudget = rollTotal;
@@ -128,7 +130,6 @@ public class PlayerController : MonoBehaviour
 
         Debug.Log($"Click at {mousePos}");
 
-        //  handles cases where a player or weapon token collider sits ahove the tile
         Collider2D[] hitColliders = Physics2D.OverlapPointAll(mousePos);
 
         foreach (Collider2D hit in hitColliders)
@@ -165,17 +166,33 @@ public class PlayerController : MonoBehaviour
         transform.position = targetPos;
         _isMoving = false;
         _reachableTiles.Clear();
-        // AudioManager.Instance?.PlayFootstep();
 
-        if (_currentTile.Type == Tile.TileType.Room)
+        // door arrival = entering the adjacent room
+        if (_currentTile.Type == Tile.TileType.Room || _currentTile.Type == Tile.TileType.Door)
         {
             string roomName = _currentTile.RoomData != null ? _currentTile.RoomData.CardName : "a room";
-            Debug.Log($"Entered {roomName} — switching to Suggesting.");
+            Debug.Log($"{Character} entered {roomName} — switching to Suggesting.");
             GameManager.Instance.ChangeState(GameManager.GameState.Suggesting);
         }
         else
         {
-            Debug.Log("Landed in hallway — turn ends.");
+            Debug.Log($"{Character} landed in hallway — turn ends.");
+            GameManager.Instance.ChangeState(GameManager.GameState.EndTurn);
+        }
+        if (_currentTile.Type == Tile.TileType.Room || _currentTile.Type == Tile.TileType.Door)
+        {
+            string roomName = _currentTile.RoomData != null ? _currentTile.RoomData.CardName : "a room";
+            Debug.Log($"{Character} entered {roomName} — switching to Suggesting.");
+            GameManager.Instance.ChangeState(GameManager.GameState.Suggesting);
+        }
+        else if (_currentTile.Type == Tile.TileType.SecretPassage)
+        {
+            Debug.Log($"{Character} landed on a secret passage — teleporting.");
+            UseSecretPassage();
+        }
+        else
+        {
+            Debug.Log($"{Character} landed in hallway — turn ends.");
             GameManager.Instance.ChangeState(GameManager.GameState.EndTurn);
         }
     }

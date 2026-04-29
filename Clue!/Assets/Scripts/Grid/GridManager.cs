@@ -140,6 +140,7 @@ public class GridManager : MonoBehaviour
 
         ApplySpawnPointHighlights();
         AssignRoomData();
+        AssignDoorRoomData();
         AssignSecretPassages();
         AddRoomLabels();
         ApplyGameSettings();
@@ -170,6 +171,44 @@ public class GridManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    // tags each door tile with the RoomData of an adjacent room tile
+    // so stepping on a door is recognised as entering that room
+    private void AssignDoorRoomData()
+    {
+        for (int x = 0; x < GridWidth; x++)
+        {
+            for (int y = 0; y < GridHeight; y++)
+            {
+                Tile tile = _grid[x, y];
+                if (tile == null || tile.Type != Tile.TileType.Door) continue;
+
+                CardData adjacentRoom = FindAdjacentRoomData(x, y);
+                if (adjacentRoom != null)
+                    tile.SetRoomData(adjacentRoom);
+                else
+                    Debug.LogWarning($"GridManager: Door at ({x},{y}) has no adjacent room.");
+            }
+        }
+    }
+
+    private CardData FindAdjacentRoomData(int x, int y)
+    {
+        int[] dx = { 0, 0, 1, -1 };
+        int[] dy = { 1, -1, 0, 0 };
+
+        for (int i = 0; i < 4; i++)
+        {
+            int nx = x + dx[i];
+            int ny = y + dy[i];
+            if (nx < 0 || nx >= GridWidth || ny < 0 || ny >= GridHeight) continue;
+
+            Tile neighbour = _grid[nx, ny];
+            if (neighbour != null && neighbour.Type == Tile.TileType.Room && neighbour.RoomData != null)
+                return neighbour.RoomData;
+        }
+        return null;
     }
 
     // Spawns a cent space w/ text label for each room
@@ -215,7 +254,7 @@ public class GridManager : MonoBehaviour
         if (_roomCards == null || _roomCards.Length < 9) return;
 
         // each pair tiles tagged with room cards get dest for room cards
-        int[,] pairs = { { 2, 6 }, { 6, 2 }, { 0, 8 }, { 8, 0 } };
+        int[,] pairs = { { 2, 8 }, { 8, 2 }, { 0, 6 }, { 6, 0 } }; 
 
         for (int x = 0; x < GridWidth; x++)
         {
@@ -272,25 +311,44 @@ public class GridManager : MonoBehaviour
             'C' or 'F' => Tile.TileType.Cellar,
             'X' => Tile.TileType.Invalid,
             'H' => Tile.TileType.Hallway,
+            'S' => Tile.TileType.SecretPassage,
             _ => Tile.TileType.Invalid
         };
     }
 
     public List<Tile> GetWalkableNeighbors(int x, int y)
     {
+        Tile current = _grid[x, y];
         List<Tile> neighbors = new();
-        if (IsValid(x, y + 1)) neighbors.Add(_grid[x, y + 1]);
-        if (IsValid(x, y - 1)) neighbors.Add(_grid[x, y - 1]);
-        if (IsValid(x + 1, y)) neighbors.Add(_grid[x + 1, y]);
-        if (IsValid(x - 1, y)) neighbors.Add(_grid[x - 1, y]);
+
+        foreach (var (ox, oy) in new[] { (0, 1), (0, -1), (1, 0), (-1, 0) })
+        {
+            int nx = x + ox, ny = y + oy;
+            if (!IsValid(nx, ny)) continue;
+
+            Tile neighbor = _grid[nx, ny];
+
+            bool canEnter = neighbor.Type switch
+            {
+                Tile.TileType.Hallway => true,
+                Tile.TileType.Spawn   => true,
+                Tile.TileType.Door    => true,
+                Tile.TileType.Room    => current.Type is Tile.TileType.Door or Tile.TileType.Room,
+                Tile.TileType.SecretPassage => true,
+                Tile.TileType.Wall    => false,
+                Tile.TileType.Cellar  => false,
+                Tile.TileType.Invalid => false,
+                _                     => false
+            };
+
+            if (canEnter) neighbors.Add(neighbor);
+        }
+
         return neighbors;
     }
 
-    private bool IsValid(int x, int y)
-    {
-        if (x >= 0 && x < GridWidth && y >= 0 && y < GridHeight) return _grid[x, y].IsWalkable;
-        return false;
-    }
+    private bool IsValid(int x, int y) =>
+        x >= 0 && x < GridWidth && y >= 0 && y < GridHeight && _grid[x, y] != null;
 
     // greys out rooms not in play
     public void ApplyGameSettings()
