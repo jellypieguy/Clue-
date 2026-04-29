@@ -1,11 +1,19 @@
 using System.Collections.Generic;
-using UnityEngine;
 
-// pathfinder for grid movement.
 public static class Pathfinder
 {
-    // returns tiles reachable from start within the given roll
-    // room tiles dest the search wont continue through them
+    private struct Node
+    {
+        public Tile tile;
+        public int distance;
+
+        public Node(Tile t, int d)
+        {
+            tile = t;
+            distance = d;
+        }
+    }
+
     public static HashSet<Tile> GetReachableTiles(Tile startTile, int movementBudget)
     {
         HashSet<Tile> reachableTiles = new HashSet<Tile>();
@@ -13,31 +21,60 @@ public static class Pathfinder
         if (movementBudget <= 0 || startTile == null)
             return reachableTiles;
 
-        Queue<KeyValuePair<Tile, int>> queue = new Queue<KeyValuePair<Tile, int>>();
+        Queue<Node> queue = new Queue<Node>();
+
         HashSet<Tile> visited = new HashSet<Tile>();
 
-        queue.Enqueue(new KeyValuePair<Tile, int>(startTile, 0));
+        queue.Enqueue(new Node(startTile, 0));
         visited.Add(startTile);
+
+        // Starting tile is always reachable (if not a room)
+        if (startTile.Type != Tile.TileType.Room)
+            reachableTiles.Add(startTile);
 
         while (queue.Count > 0)
         {
-            var currentNode = queue.Dequeue();
-            Tile currentTile = currentNode.Key;
-            int currentDistance = currentNode.Value;
+            Node current = queue.Dequeue();
 
-            if (currentDistance >= movementBudget)
-                continue;
-
-            foreach (Tile neighbor in currentTile.GetWalkableNeighbors())
+            foreach (Tile neighbor in current.tile.GetWalkableNeighbors())
             {
-                if (!visited.Contains(neighbor))
-                {
-                    visited.Add(neighbor);
-                    reachableTiles.Add(neighbor);
+                if (visited.Contains(neighbor))
+                    continue;
 
-                    // enter a room but cant path thru  it
-                    if (neighbor.Type != Tile.TileType.Room)
-                        queue.Enqueue(new KeyValuePair<Tile, int>(neighbor, currentDistance + 1));
+                Tile.TileType nextType = neighbor.Type;
+
+                // ----------------------------
+                // RULE 1: ROOM ENTRY ONLY FROM DOOR
+                // ----------------------------
+                if (nextType == Tile.TileType.Room)
+                {
+                    if (current.tile.Type != Tile.TileType.Door)
+                        continue;
+                }
+
+                // ----------------------------
+                // RULE 2: VALID TILE TYPES ONLY
+                // ----------------------------
+                if (nextType != Tile.TileType.Hallway &&
+                    nextType != Tile.TileType.Door &&
+                    nextType != Tile.TileType.Room)
+                    continue;
+
+                int newDistance = current.distance + 1;
+
+                if (newDistance > movementBudget)
+                    continue;
+
+                visited.Add(neighbor);
+
+                // Always add reachable tile
+                reachableTiles.Add(neighbor);
+
+                // IMPORTANT:
+                // Do NOT expand FROM rooms (prevents illegal multi-room traversal)
+                if (nextType != Tile.TileType.Room)
+                {
+                    queue.Enqueue(new Node(neighbor, newDistance));
                 }
             }
         }
