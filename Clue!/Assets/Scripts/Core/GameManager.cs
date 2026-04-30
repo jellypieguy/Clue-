@@ -97,7 +97,10 @@ public class GameManager : MonoBehaviour
             foreach (CardData card in hand.Cards)
                 DetectiveNotepad.Instance.AutoMarkCard(card.CardName);
 
-            break; // only one human player
+            Debug.Log($"[HandDisplay] Showing {hand.GetHand().Count} cards");
+            PlayerHandDisplay.Instance?.ShowHand(hand.GetHand());
+
+            break;
         }
     }
 
