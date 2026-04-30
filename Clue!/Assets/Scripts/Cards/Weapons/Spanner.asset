@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 1
   CardName: Spanner
-  CardImage: {fileID: 0}
+  CardImage: {fileID: -144812518476572838, guid: 134e856d703a2564482a5ef631839c30, type: 3}
