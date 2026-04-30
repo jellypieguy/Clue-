@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 1
   CardName: Revolver
-  CardImage: {fileID: 1872732258777413398, guid: 21a79679019787a4a8687dad955f50ef, type: 3}
+  CardImage: {fileID: 8200246906327157222, guid: a531fd3064ff0f440a2be1caf72a4190, type: 3}

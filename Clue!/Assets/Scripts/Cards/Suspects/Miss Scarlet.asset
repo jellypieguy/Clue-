@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 0
   CardName: Miss Scarlet
-  CardImage: {fileID: 0}
+  CardImage: {fileID: 8514641189335208241, guid: c5182dd7af4b33f47b83a41fe704ba29, type: 3}

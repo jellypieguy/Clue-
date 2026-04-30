@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 2
   CardName: Dining Room
-  CardImage: {fileID: 0}
+  CardImage: {fileID: -3850659085453982625, guid: d9a76a272d752a443b7679d1e73d5b59, type: 3}

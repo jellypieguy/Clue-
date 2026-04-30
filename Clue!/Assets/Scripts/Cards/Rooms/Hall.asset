@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 2
   CardName: Hall
-  CardImage: {fileID: 0}
+  CardImage: {fileID: -3043249968972955321, guid: 51e5f874bedf25843a06d98feeaf52d0, type: 3}

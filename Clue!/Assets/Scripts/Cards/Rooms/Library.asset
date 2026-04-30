@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 2
   CardName: Library
-  CardImage: {fileID: 0}
+  CardImage: {fileID: -312612317098714622, guid: 7254404188c3ff84a98641cf1b765a2d, type: 3}
