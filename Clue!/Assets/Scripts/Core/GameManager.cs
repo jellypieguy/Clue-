@@ -156,49 +156,51 @@ public class GameManager : MonoBehaviour
     }
 
     private IEnumerator AIMoveRoutine(PlayerController current)
-{
-    yield return new WaitForSeconds(1.5f);
-
-    if (aiAgent == null)
     {
-        Debug.LogWarning("[GameManager] No AIAgent in scene, ending AI turn.");
-        ChangeState(GameState.EndTurn);
-        yield break;
+        yield return new WaitForSeconds(1.5f);
+
+        if (aiAgent == null)
+        {
+            Debug.LogWarning("[GameManager] No AIAgent in scene, ending AI turn.");
+            ChangeState(GameState.EndTurn);
+            yield break;
+        }
+
+        int roll = DiceRoller.Instance.LastRoll;
+        HashSet<Tile> reachable = Pathfinder.GetReachableTiles(current.CurrentTile, roll);
+
+        if (reachable.Count == 0)
+        {
+            Debug.Log($"[AI] {current.Character} has no reachable tiles.");
+            ChangeState(GameState.EndTurn);
+            yield break;
+        }
+
+        // Prefer door/room tiles so AI can make a suggestion
+        List<Tile> roomTiles = new List<Tile>();
+        List<Tile> hallwayTiles = new List<Tile>();
+
+        foreach (Tile t in reachable)
+        {
+            if (t.Type == Tile.TileType.Door || t.Type == Tile.TileType.Room)
+                roomTiles.Add(t);
+            else
+                hallwayTiles.Add(t);
+        }
+
+        List<Tile> candidates = roomTiles.Count > 0 ? roomTiles : hallwayTiles;
+
+        // Filter out occupied tiles
+        List<Tile> freeCandidates = candidates.FindAll(t => !IsTileOccupied(t));
+        if (freeCandidates.Count == 0) freeCandidates = candidates;
+
+        Tile chosenTile = freeCandidates[UnityEngine.Random.Range(0, freeCandidates.Count)];
+
+        Debug.Log($"[AI] {current.Character} moving to {chosenTile.name}");
+
+        current.ClearReachableHighlights();
+        yield return StartCoroutine(AIMoveToTile(current, chosenTile));
     }
-
-    // Get reachable tiles using the same pathfinder as the human
-    int roll = DiceRoller.Instance.LastRoll;
-    HashSet<Tile> reachable = Pathfinder.GetReachableTiles(current.CurrentTile, roll);
-
-    if (reachable.Count == 0)
-    {
-        Debug.Log($"[AI] {current.Character} has no reachable tiles.");
-        ChangeState(GameState.EndTurn);
-        yield break;
-    }
-
-    // Prefer door/room tiles so AI can make a suggestion
-    List<Tile> roomTiles = new List<Tile>();
-    List<Tile> hallwayTiles = new List<Tile>();
-
-    foreach (Tile t in reachable)
-    {
-        if (t.Type == Tile.TileType.Door || t.Type == Tile.TileType.Room)
-            roomTiles.Add(t);
-        else
-            hallwayTiles.Add(t);
-    }
-
-    // Pick a room tile if possible, otherwise pick any hallway tile
-    List<Tile> candidates = roomTiles.Count > 0 ? roomTiles : hallwayTiles;
-    Tile chosenTile = candidates[UnityEngine.Random.Range(0, candidates.Count)];
-
-    Debug.Log($"[AI] {current.Character} moving to {chosenTile.name}");
-
-    // Use the same MoveToTile logic as human — animate and trigger state change
-    current.ClearReachableHighlights();
-    yield return StartCoroutine(AIMoveToTile(current, chosenTile));
-}
 
 private IEnumerator AIMoveToTile(PlayerController current, Tile targetTile)
 {
@@ -361,5 +363,15 @@ private IEnumerator AIMoveToTile(PlayerController current, Tile targetTile)
         return suspect == DeckManager.Instance.Murderer
             && weapon == DeckManager.Instance.MurderWeapon
             && room == DeckManager.Instance.MurderRoom;
+    }
+    private bool IsTileOccupied(Tile tile)
+    {
+        foreach (PlayerController player in TurnManager.Instance.GetPlayers())
+        {
+            if (player == TurnManager.Instance.CurrentPlayer) continue;
+            if (player.CurrentTile == tile && !player.IsEliminated)
+                return true;
+        }
+        return false;
     }
 }

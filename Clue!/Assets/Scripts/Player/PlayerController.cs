@@ -153,8 +153,6 @@ public class PlayerController : MonoBehaviour
         if (Mouse.current != null)
             mousePos = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());
 
-        Debug.Log($"Click at {mousePos}");
-
         Collider2D[] hitColliders = Physics2D.OverlapPointAll(mousePos);
 
         foreach (Collider2D hit in hitColliders)
@@ -162,11 +160,28 @@ public class PlayerController : MonoBehaviour
             Tile clickedTile = hit.GetComponent<Tile>();
             if (clickedTile != null && _reachableTiles.Contains(clickedTile))
             {
+                // Check if another player is already on this tile
+                if (IsTileOccupied(clickedTile))
+                {
+                    Debug.Log($"{Character}: Tile is occupied, pick another.");
+                    return;
+                }
                 ClearReachableHighlights();
                 StartCoroutine(MoveToTile(clickedTile));
                 return;
             }
         }
+    }
+
+    private bool IsTileOccupied(Tile tile)
+    {
+        foreach (PlayerController player in TurnManager.Instance.GetPlayers())
+        {
+            if (player == this) continue;
+            if (player.CurrentTile == tile && !player.IsEliminated)
+                return true;
+        }
+        return false;
     }
 
     private IEnumerator MoveToTile(Tile targetTile)

@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: Dagger
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 1
-  CardName: dagger
+  CardName: Dagger
   CardImage: {fileID: 1872732258777413398, guid: 21a79679019787a4a8687dad955f50ef, type: 3}

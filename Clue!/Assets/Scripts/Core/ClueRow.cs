@@ -15,7 +15,6 @@ public class CluedoRow : MonoBehaviour
     static readonly Color ColMaybe    = new Color(0.22f, 0.54f, 0.87f, 1f);
     static readonly Color ColYes      = new Color(0.39f, 0.60f, 0.13f, 1f);
     static readonly Color ColInactive = new Color(0.82f, 0.82f, 0.82f, 1f);
-    static readonly Color ColLocked   = new Color(0.25f, 0.72f, 0.43f, 1f);
 
     ClueEntry entry;
     Action    onChange;
@@ -33,7 +32,6 @@ public class CluedoRow : MonoBehaviour
 
     void Toggle(ClueState clicked)
     {
-        if (entry.isInHand) return;
         entry.state = (entry.state == clicked) ? ClueState.None : clicked;
         Refresh();
         onChange?.Invoke();
@@ -41,21 +39,13 @@ public class CluedoRow : MonoBehaviour
 
     public void Refresh()
     {
-        if (entry.isInHand)
-        {
-            SetColor(noButton,    ColLocked);
-            SetColor(maybeButton, ColLocked);
-            SetColor(yesButton,   ColLocked);
-            noButton   .interactable = false;
-            maybeButton.interactable = false;
-            yesButton  .interactable = false;
-            if (!labelText.text.EndsWith(" ✓"))
-                labelText.text += " ✓";
-            return;
-        }
         SetColor(noButton,    entry.state == ClueState.No    ? ColNo    : ColInactive);
         SetColor(maybeButton, entry.state == ClueState.Maybe ? ColMaybe : ColInactive);
         SetColor(yesButton,   entry.state == ClueState.Yes   ? ColYes   : ColInactive);
+
+        noButton   .interactable = true;
+        maybeButton.interactable = true;
+        yesButton  .interactable = true;
     }
 
     void SetColor(Button btn, Color c)

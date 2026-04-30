@@ -24,15 +24,15 @@ public class GridManager : MonoBehaviour
     private static readonly int[,] RoomRegions = new int[9, 4]
     {
         // xMin  xMax  yMin  yMax
-        {  1,    6,    20,   25 },  // 0: consarvatory
-        {  9,    16,   19,   25 },  // 1: ballroom
-        {  19,   24,   20,   25 },  // 2: kitchen
-        {  1,    9,    8,    18 },  // 3: dining room
-        {  17,   24,   13,   18 },  // 4: billiard room
-        {  17,   24,   5,    12 },  // 5: library
-        {  1,    8,    1,    6  },  // 6: lounge
-        {  9,    16,   1,    6  },  // 7: hall
-        {  17,   24,   1,    6  },  // 8: study
+        {  0,    5,    21,   23 },  // 0: Conservatory
+        {  10,   13,   18,   23 },  // 1: Ballroom
+        {  18,   23,   19,   23 },  // 2: Kitchen
+        {  0,    4,    8,    10 },  // 3: Dining Room
+        {  17,   23,   9,    13 },  // 4: Billiard Room
+        {  0,    5,    14,   16 },  // 5: Library
+        {  0,    3,    0,    3  },  // 6: Lounge
+        {  9,    14,   0,    4  },  // 7: Hall
+        {  19,   23,   0,    5  },  // 8: Study
     };
 
     private Tile[,] _grid;
