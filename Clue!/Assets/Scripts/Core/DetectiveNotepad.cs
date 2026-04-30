@@ -57,13 +57,14 @@ public class DetectiveNotepad : MonoBehaviour
 
     // ── Static card lists (must match your CardData names exactly) ───────────
     static readonly string[] Suspects = {
-        "Miss Scarlett", "Col. Mustard", "Mrs. White",
-        "Rev. Green", "Mrs. Peacock", "Prof. Plum"
+        "Miss Scarlet", "Colonel Mustard", "Mrs. White",
+        "Mr Green", "Mrs. Peacock", "Professor Plum"
     };
     static readonly string[] Weapons = {
-        "Candlestick", "Knife", "Lead Pipe",
-        "Revolver", "Rope", "Wrench"
+        "Candlestick", "Dagger", "Lead Pipe",
+        "Revolver", "Rope", "Spanner"
     };
+
     static readonly string[] Rooms = {
         "Ballroom", "Billiard Room", "Conservatory",
         "Dining Room", "Hall", "Kitchen",
@@ -85,6 +86,7 @@ public class DetectiveNotepad : MonoBehaviour
 
     void Start()
     {
+        PlayerPrefs.DeleteKey("CluedoNotepad_v1");
         Load();
 
         BuildSection(suspectsContainer, Suspects, data.suspects);
