@@ -24,17 +24,16 @@ public class GridManager : MonoBehaviour
     private static readonly int[,] RoomRegions = new int[9, 4]
     {
         // xMin  xMax  yMin  yMax
-        {  0,    5,    21,   23 },  // 0: Conservatory
-        {  10,   13,   18,   23 },  // 1: Ballroom
-        {  18,   23,   19,   23 },  // 2: Kitchen
-        {  0,    4,    8,    10 },  // 3: Dining Room
-        {  17,   23,   9,    13 },  // 4: Billiard Room
-        {  0,    5,    14,   16 },  // 5: Library
-        {  0,    3,    0,    3  },  // 6: Lounge
-        {  9,    14,   0,    4  },  // 7: Hall
-        {  19,   23,   0,    5  },  // 8: Study
+        {  0,    5,    21,   23 },  // 0: Study
+        {  10,   13,   18,   23 },  // 1: Hall
+        {  18,   23,   19,   23 },  // 2: Lounge
+        {  0,    4,    8,    10 },  // 3: Library
+        {  17,   23,   9,    13 },  // 4: Dining Room
+        {  0,    5,    14,   16 },  // 5: Billiard Room
+        {  0,    3,    0,    3  },  // 6: Conservatory
+        {  9,    14,   0,    4  },  // 7: Ballroom
+        {  19,   23,   0,    5  },  // 8: Kitchen
     };
-
     private Tile[,] _grid;
     private Tile[] _spawnPoints = new Tile[6];
 
@@ -253,8 +252,8 @@ public class GridManager : MonoBehaviour
     {
         if (_roomCards == null || _roomCards.Length < 9) return;
 
-        // each pair tiles tagged with room cards get dest for room cards
-        int[,] pairs = { { 2, 8 }, { 8, 2 }, { 0, 6 }, { 6, 0 } }; 
+        // Study(0) <-> Kitchen(8), Conservatory(6) <-> Lounge(2)
+        int[,] pairs = { { 0, 8 }, { 8, 0 }, { 6, 2 }, { 2, 6 } };
 
         for (int x = 0; x < GridWidth; x++)
         {
