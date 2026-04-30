@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 2
   CardName: Lounge
-  CardImage: {fileID: 0}
+  CardImage: {fileID: 3803137631462328856, guid: a5dedd1d1f49e254fac849fc74c69676, type: 3}

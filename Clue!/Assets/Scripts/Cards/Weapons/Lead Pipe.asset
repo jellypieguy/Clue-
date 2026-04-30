@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 1
   CardName: Lead Pipe
-  CardImage: {fileID: 1872732258777413398, guid: 21a79679019787a4a8687dad955f50ef, type: 3}
+  CardImage: {fileID: -1651143931077237485, guid: ed6eacbb92f5f4849953a45d388b1a99, type: 3}

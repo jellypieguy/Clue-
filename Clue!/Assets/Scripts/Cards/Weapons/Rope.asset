@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 1
   CardName: Rope
-  CardImage: {fileID: 1872732258777413398, guid: 21a79679019787a4a8687dad955f50ef, type: 3}
+  CardImage: {fileID: 8662384261516989540, guid: 2300d1dd3a077984db2676948bd4ac89, type: 3}

@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 2
   CardName: Billiard Room
-  CardImage: {fileID: 0}
+  CardImage: {fileID: -7009625534239435562, guid: 40b0649be6b458248b9363a74c1eb2e0, type: 3}

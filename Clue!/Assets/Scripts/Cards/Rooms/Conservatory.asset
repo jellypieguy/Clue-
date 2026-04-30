@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 2
   CardName: Conservatory
-  CardImage: {fileID: 0}
+  CardImage: {fileID: 7818757392002222490, guid: dd945599d6b747d47866b1aff060d300, type: 3}

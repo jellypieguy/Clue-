@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 2
   CardName: Study
-  CardImage: {fileID: 0}
+  CardImage: {fileID: -3056259800998472206, guid: d80405eb3b015d24a864aa83c0d95c4f, type: 3}
