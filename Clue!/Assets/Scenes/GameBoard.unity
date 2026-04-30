@@ -2810,7 +2810,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 356099925}
   m_HandleRect: {fileID: 356099924}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -6569,7 +6569,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 899464043}
   m_HandleRect: {fileID: 899464042}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -7288,6 +7288,7 @@ GameObject:
   - component: {fileID: 980481311}
   - component: {fileID: 980481310}
   - component: {fileID: 980481309}
+  - component: {fileID: 980481312}
   m_Layer: 5
   m_Name: SaveButton
   m_TagString: Untagged
@@ -7397,6 +7398,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 980481307}
   m_CullTransparentMesh: 1
+--- !u!114 &980481312
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 980481307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: -1
+  m_MinHeight: 45
+  m_PreferredWidth: -1
+  m_PreferredHeight: -1
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1
 --- !u!1 &984870169
 GameObject:
   m_ObjectHideFlags: 0
@@ -7602,6 +7623,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DiceRoller
   _diceDisplay: {fileID: 894737270}
   _rollDuration: 1.2
+  _dice1: {fileID: 0}
+  _dice2: {fileID: 0}
+  _spinSpeed: 720
 --- !u!114 &1040057366
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8782,6 +8806,7 @@ GameObject:
   - component: {fileID: 1242825620}
   - component: {fileID: 1242825619}
   - component: {fileID: 1242825618}
+  - component: {fileID: 1242825621}
   m_Layer: 5
   m_Name: ClearButton
   m_TagString: Untagged
@@ -8891,6 +8916,26 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1242825616}
   m_CullTransparentMesh: 1
+--- !u!114 &1242825621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1242825616}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: -1
+  m_MinHeight: 45
+  m_PreferredWidth: -1
+  m_PreferredHeight: -1
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1
 --- !u!1 &1244162450
 GameObject:
   m_ObjectHideFlags: 0
@@ -10490,6 +10535,11 @@ MonoBehaviour:
   volumeSlider: {fileID: 1790219729}
   muteToggle: {fileID: 420117005}
   resumeButton: {fileID: 664828387}
+  passDevicePanel: {fileID: 0}
+  passDeviceText: {fileID: 0}
+  passDeviceContinueButton: {fileID: 0}
+  handContainer: {fileID: 0}
+  cardPrefab: {fileID: 0}
 --- !u!4 &1438233440
 Transform:
   m_ObjectHideFlags: 0
