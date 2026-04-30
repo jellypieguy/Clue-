@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 0
   CardName: Mrs. Peacock
-  CardImage: {fileID: 1300551089441661687, guid: 94e31fb57136e334bb1155e295f1a680, type: 3}
+  CardImage: {fileID: 21300000, guid: 94e31fb57136e334bb1155e295f1a680, type: 3}

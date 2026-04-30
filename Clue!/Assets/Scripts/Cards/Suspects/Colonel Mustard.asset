@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 0
   CardName: Colonel Mustard
-  CardImage: {fileID: 4715506970512423296, guid: bb8c2b43c0ee7b44c8bc71241bc05942, type: 3}
+  CardImage: {fileID: 21300000, guid: bb8c2b43c0ee7b44c8bc71241bc05942, type: 3}

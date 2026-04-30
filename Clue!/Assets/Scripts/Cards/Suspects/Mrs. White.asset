@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 0
   CardName: Mrs. White
-  CardImage: {fileID: -8305298952973714011, guid: 987bed8fb1e650e4f9ff72a9ba97c17d, type: 3}
+  CardImage: {fileID: 21300000, guid: 987bed8fb1e650e4f9ff72a9ba97c17d, type: 3}

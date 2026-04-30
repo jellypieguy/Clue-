@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 0
   CardName: Mr Green
-  CardImage: {fileID: -7266582300175522576, guid: 253aad00ee976a94bafff70eb94c6827, type: 3}
+  CardImage: {fileID: 21300000, guid: 253aad00ee976a94bafff70eb94c6827, type: 3}

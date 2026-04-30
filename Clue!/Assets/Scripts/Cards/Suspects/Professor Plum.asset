@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardData
   Type: 0
   CardName: Professor Plum
-  CardImage: {fileID: -7583738857634686949, guid: 64d35e26abe92da499901532ff15b932, type: 3}
+  CardImage: {fileID: 21300000, guid: 64d35e26abe92da499901532ff15b932, type: 3}
