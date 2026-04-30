@@ -17,10 +17,14 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Tile tilePrefab;
 
     [Header("Room Card Data (assign in Inspector)")]
-    [Tooltip("0=Conservatory 1=Ballroom 2=Kitchen 3=DiningRoom 4=BilliardRoom 5=Library 6=Lounge 7=Hall 8=Study")]
+    [Tooltip("0=Study 1=Hall 2=Lounge 3=Library 4=DiningRoom 5=BilliardRoom 6=Conservatory 7=Ballroom 8=Kitchen")]
     [SerializeField] private CardData[] _roomCards = new CardData[9];
 
-    // bunding boxes for each room Format xMin, xMax, yMin, yMax Y=0 is the bottom.
+    [Header("Room Images (same order as Room Cards)")]
+    [Tooltip("0=Study 1=Hall 2=Lounge 3=Library 4=DiningRoom 5=BilliardRoom 6=Conservatory 7=Ballroom 8=Kitchen")]
+    [SerializeField] private Sprite[] _roomImages = new Sprite[9];
+
+    // bounding boxes for each room. Format: xMin, xMax, yMin, yMax. Y=0 is the bottom.
     private static readonly int[,] RoomRegions = new int[9, 4]
     {
         // xMin  xMax  yMin  yMax
@@ -34,6 +38,7 @@ public class GridManager : MonoBehaviour
         {  9,    14,   0,    4  },  // 7: Ballroom
         {  19,   23,   0,    5  },  // 8: Kitchen
     };
+
     private Tile[,] _grid;
     private Tile[] _spawnPoints = new Tile[6];
 
@@ -46,7 +51,6 @@ public class GridManager : MonoBehaviour
         }
         Instance = this;
 
-        // Calc dimension early so CameraFit can use them in Start
         CalculateDimensions();
         GenerateGrid();
     }
@@ -69,9 +73,7 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-    }
+    private void Start() { }
 
     private void GenerateGrid()
     {
@@ -91,7 +93,7 @@ public class GridManager : MonoBehaviour
         SpriteRenderer prefabSR = tilePrefab != null ? tilePrefab.GetComponent<SpriteRenderer>() : null;
         Sprite tileSprite = prefabSR != null ? prefabSR.sprite : null;
 
-        // background nd grid
+        // background and grid
         GameObject boardBase = new("BoardBackground");
         boardBase.transform.SetParent(transform);
         boardBase.transform.localPosition = new(0, 0, 0.5f);
@@ -141,11 +143,11 @@ public class GridManager : MonoBehaviour
         AssignRoomData();
         AssignDoorRoomData();
         AssignSecretPassages();
-        AddRoomLabels();
+        AddRoomImagesAndLabels();
         ApplyGameSettings();
     }
 
-    // 2nd pass after gen tags each room tile with its data via grid pos
+    // 2nd pass after gen - tags each room tile with its CardData via grid position
     private void AssignRoomData()
     {
         if (_roomCards == null || _roomCards.Length < 9) return;
@@ -172,8 +174,7 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    // tags each door tile with the RoomData of an adjacent room tile
-    // so stepping on a door is recognised as entering that room
+    // Tags each door tile with the RoomData of its adjacent room tile
     private void AssignDoorRoomData()
     {
         for (int x = 0; x < GridWidth; x++)
@@ -210,8 +211,8 @@ public class GridManager : MonoBehaviour
         return null;
     }
 
-    // Spawns a cent space w/ text label for each room
-    private void AddRoomLabels()
+    // Places room background images and text labels for each room
+    private void AddRoomImagesAndLabels()
     {
         if (_roomCards == null) return;
 
@@ -223,10 +224,34 @@ public class GridManager : MonoBehaviour
             CardData card = _roomCards[i];
             if (card == null) continue;
 
-            // @grace put the label at the centre of the room's box.
             float cx = (RoomRegions[i, 0] + RoomRegions[i, 1]) * 0.5f;
             float cy = (RoomRegions[i, 2] + RoomRegions[i, 3]) * 0.5f;
+            float roomW = RoomRegions[i, 1] - RoomRegions[i, 0];
+            float roomH = RoomRegions[i, 3] - RoomRegions[i, 2];
 
+            // Room background image
+            if (_roomImages != null && i < _roomImages.Length && _roomImages[i] != null)
+            {
+                GameObject imgObj = new($"RoomImage_{card.CardName}");
+                imgObj.transform.SetParent(transform);
+                imgObj.transform.position = new Vector3(startX + cx, startY + cy, 0.05f);
+
+                SpriteRenderer sr = imgObj.AddComponent<SpriteRenderer>();
+                sr.sprite = _roomImages[i];
+                sr.sortingOrder = 1;
+
+                // Scale to fit the room area exactly
+                float spriteW = sr.sprite.bounds.size.x;
+                float spriteH = sr.sprite.bounds.size.y;
+                imgObj.transform.localScale = new Vector3(
+                    (roomW + 3.5f) / spriteW,
+                    (roomH + 3.5f) / spriteH,
+                    1f
+                );
+                sr.color = Color.white; // fully opaque
+            }
+
+            // Room name label on top of image
             GameObject go = new($"Label_{card.CardName}");
             go.transform.SetParent(transform);
             go.transform.position = new(startX + cx, startY + cy, -0.05f);
@@ -236,23 +261,21 @@ public class GridManager : MonoBehaviour
             tmp.fontSize = 2.4f;
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = new(0f, 0f, 0f, 0.60f);
+            tmp.color = new(1f, 1f, 1f, 0.85f);
             tmp.textWrappingMode = TextWrappingModes.Normal;
             tmp.rectTransform.sizeDelta = new(5f, 3f);
 
-            // sits above the tile below player tokens.
             MeshRenderer mr = go.GetComponent<MeshRenderer>();
             if (mr != null) mr.sortingOrder = 6;
         }
     }
 
-    // for the diagonal secret passage between the corner rooms
-    // rooom card indices 0=Conservatory, 2=Kitchen, 6=Lounge, 8=Study
+    // Secret passages between corner rooms
+    // Study(0) <-> Kitchen(8), Conservatory(6) <-> Lounge(2)
     private void AssignSecretPassages()
     {
         if (_roomCards == null || _roomCards.Length < 9) return;
 
-        // Study(0) <-> Kitchen(8), Conservatory(6) <-> Lounge(2)
         int[,] pairs = { { 0, 8 }, { 8, 0 }, { 6, 2 }, { 2, 6 } };
 
         for (int x = 0; x < GridWidth; x++)
@@ -305,13 +328,13 @@ public class GridManager : MonoBehaviour
         return c switch
         {
             'W' or 'B' => Tile.TileType.Wall,
-            'R' => Tile.TileType.Room,
-            'D' => Tile.TileType.Door,
+            'R'        => Tile.TileType.Room,
+            'D'        => Tile.TileType.Door,
             'C' or 'F' => Tile.TileType.Cellar,
-            'X' => Tile.TileType.Invalid,
-            'H' => Tile.TileType.Hallway,
-            'S' => Tile.TileType.SecretPassage,
-            _ => Tile.TileType.Invalid
+            'X'        => Tile.TileType.Invalid,
+            'H'        => Tile.TileType.Hallway,
+            'S'        => Tile.TileType.SecretPassage,
+            _          => Tile.TileType.Invalid
         };
     }
 
@@ -329,15 +352,15 @@ public class GridManager : MonoBehaviour
 
             bool canEnter = neighbor.Type switch
             {
-                Tile.TileType.Hallway => true,
-                Tile.TileType.Spawn   => true,
-                Tile.TileType.Door    => true,
-                Tile.TileType.Room    => current.Type is Tile.TileType.Door or Tile.TileType.Room,
+                Tile.TileType.Hallway       => true,
+                Tile.TileType.Spawn         => true,
+                Tile.TileType.Door          => true,
+                Tile.TileType.Room          => current.Type is Tile.TileType.Door or Tile.TileType.Room,
                 Tile.TileType.SecretPassage => true,
-                Tile.TileType.Wall    => false,
-                Tile.TileType.Cellar  => false,
-                Tile.TileType.Invalid => false,
-                _                     => false
+                Tile.TileType.Wall          => false,
+                Tile.TileType.Cellar        => false,
+                Tile.TileType.Invalid       => false,
+                _                           => false
             };
 
             if (canEnter) neighbors.Add(neighbor);
@@ -349,7 +372,7 @@ public class GridManager : MonoBehaviour
     private bool IsValid(int x, int y) =>
         x >= 0 && x < GridWidth && y >= 0 && y < GridHeight && _grid[x, y] != null;
 
-    // greys out rooms not in play
+    // Greys out rooms not in play
     public void ApplyGameSettings()
     {
         if (GameSettings.Instance == null) return;
@@ -368,7 +391,7 @@ public class GridManager : MonoBehaviour
         Debug.Log("GridManager: Room exclusions applied.");
     }
 
-    // RE: movement room tiles that have Card data assigned - for a.i
+    // Returns all walkable room tiles that have CardData assigned - used by AI
     public List<Tile> GetRoomTilesWithData()
     {
         List<Tile> result = new();
@@ -382,7 +405,7 @@ public class GridManager : MonoBehaviour
         return result;
     }
 
-    // RE: movement into room tile assign w the Card ref secret passage 
+    // Returns a walkable tile inside the given room - used by AI and secret passages
     public Tile GetRoomTile(CardData roomData)
     {
         if (roomData == null) return null;

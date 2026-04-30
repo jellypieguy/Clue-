@@ -52,7 +52,7 @@ public class Tile : MonoBehaviour
                 case TileType.Spawn:
                     _sr.color = new Color(1f, 1f, 0.85f); break;     // cream
                 case TileType.Room:
-                    _sr.color = new Color(0.6f, 0.8f, 0.9f); break;  // light blue
+                    _sr.color = new Color(0f, 0f, 0f, 0f); break;  // transparent
                 case TileType.Door:
                     _sr.color = new Color(0.9f, 0.7f, 0.2f); break;  // gold
                 case TileType.Cellar:
@@ -61,7 +61,7 @@ public class Tile : MonoBehaviour
                 case TileType.SecretPassage:
                     _sr.color = new Color(0.8f, 0.4f, 0.9f); break;  // purple
                 case TileType.Invalid:
-                    _sr.color = new Color(0.2f, 0.8f, 0.2f); break;  // green (outside board)
+                    _sr.color = new Color(0f, 0f, 0f, 0f); break;  // transparent
             }
             _originalColor = _sr.color;
         }
@@ -73,7 +73,9 @@ public class Tile : MonoBehaviour
             textMesh.GetComponent<MeshRenderer>().sortingOrder = 10;
             textMesh.fontSize = 6f;
             textMesh.color = new Color(0, 0, 0, 0.8f);
-            if (Type == TileType.Invalid && mapChar == ' ')
+    
+            // hide text on room and invalid tiles — room images cover them
+            if (Type == TileType.Room || Type == TileType.Invalid || mapChar == ' ')
                 textMesh.enabled = false;
         }
     }
