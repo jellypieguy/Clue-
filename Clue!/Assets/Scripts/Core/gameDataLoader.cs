@@ -1,66 +1,38 @@
 using UnityEngine;
 using System.IO;
+using System.Linq;
 
 public class GameDataLoader : MonoBehaviour
 {
     public GameData LoadedData { get; private set; }
 
-    // Loads game data from JSON, trying StreamingAssets first then Resources as fallback
     public void LoadGameData()
     {
-        string filePath = Path.Combine(Application.streamingAssetsPath, "game_data.json");
-        Debug.Log("Looking for game data at: " + filePath);
-
-        // Primary path — StreamingAssets is preferred for runtime file access
-        if (File.Exists(filePath))
+        string streamingPath = Path.Combine(Application.streamingAssetsPath, "game_data.json");
+        
+        if (File.Exists(streamingPath))
         {
-            string jsonText = File.ReadAllText(filePath);
-            LoadedData = JsonUtility.FromJson<GameData>(jsonText);
-            Debug.Log("Game data loaded from StreamingAssets!");
-        }
-        else
-        {
-            // Fallback path — Resources folder works in editor and built players
-            TextAsset jsonFile = Resources.Load<TextAsset>("game_data");
-            if (jsonFile != null)
-            {
-                LoadedData = JsonUtility.FromJson<GameData>(jsonFile.text);
-                Debug.Log("Game data loaded from Resources!");
-            }
-            else
-            {
-                Debug.LogError("Could not find game_data.json in StreamingAssets or Resources!");
-                Debug.LogError("StreamingAssets path tried: " + filePath);
-                Debug.LogError("Make sure game_data.json is in Assets/StreamingAssets/ OR Assets/Resources/");
-                return;
-            }
+            string jsonContent = File.ReadAllText(streamingPath);
+            LoadedData = JsonUtility.FromJson<GameData>(jsonContent);
+            return;
         }
 
-        // Log loaded counts to verify data integrity on startup
-        Debug.Log("Characters: " + LoadedData.characters.Length);
-        Debug.Log("Weapons: " + LoadedData.weapons.Length);
-        Debug.Log("Rooms: " + LoadedData.rooms.Length);
-        Debug.Log("Secret passages: " + LoadedData.secretPassages.Length);
+        var resourceFile = Resources.Load<TextAsset>("game_data");
+        if (resourceFile != null)
+        {
+            LoadedData = JsonUtility.FromJson<GameData>(resourceFile.text);
+            return;
+        }
+
+        Debug.LogError($"GameDataLoader: mis game_data.json fix in the {streamingPath} ");
     }
 
-    // Extracts character names from the loaded data for use by CardDealer
-    public string[] GetCharacterNames()
-    {
-        string[] names = new string[LoadedData.characters.Length];
-        for (int i = 0; i < LoadedData.characters.Length; i++)
-            names[i] = LoadedData.characters[i].name;
-        return names;
-    }
+    public string[] GetCharacterNames() => 
+        LoadedData?.characters?.Select(c => c.name).ToArray() ?? System.Array.Empty<string>();
 
-    // Returns weapon names directly from the loaded JSON array
-    public string[] GetWeaponNames()
-    {
-        return LoadedData.weapons;
-    }
+    public string[] GetWeaponNames() => 
+        LoadedData?.weapons ?? System.Array.Empty<string>();
 
-    // Returns room names directly from the loaded JSON array
-    public string[] GetRoomNames()
-    {
-        return LoadedData.rooms;
-    }
+    public string[] GetRoomNames() => 
+        LoadedData?.rooms ?? System.Array.Empty<string>();
 }

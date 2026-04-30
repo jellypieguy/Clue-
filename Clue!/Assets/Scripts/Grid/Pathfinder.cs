@@ -1,49 +1,37 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// pathfinder for grid movement.
 public static class Pathfinder
 {
-    // returns tiles reachable from start within the given roll
-    // room tiles dest the search wont continue through them
+    // figure out where we can walk on roll
     public static HashSet<Tile> GetReachableTiles(Tile startTile, int movementBudget)
     {
-        HashSet<Tile> reachableTiles = new HashSet<Tile>();
+        var reachableTiles = new HashSet<Tile>();
 
-        if (movementBudget <= 0 || startTile == null)
-            return reachableTiles;
+        if (movementBudget <= 0 || startTile == null) return reachableTiles;
 
-        Queue<KeyValuePair<Tile, int>> queue = new Queue<KeyValuePair<Tile, int>>();
-        HashSet<Tile> visited = new HashSet<Tile>();
+        var queue = new Queue<KeyValuePair<Tile, int>>();
+        var visited = new HashSet<Tile> { startTile };
 
         queue.Enqueue(new KeyValuePair<Tile, int>(startTile, 0));
-        visited.Add(startTile);
 
         while (queue.Count > 0)
         {
-            var currentNode = queue.Dequeue();
-            Tile currentTile = currentNode.Key;
-            int currentDistance = currentNode.Value;
+            var (currentTile, currentDistance) = queue.Dequeue();
 
-            if (currentDistance >= movementBudget)
-                continue;
+            if (currentDistance >= movementBudget) continue;
 
-            foreach (Tile neighbor in currentTile.GetWalkableNeighbors())
+            foreach (var neighbor in currentTile.GetWalkableNeighbors())
             {
-                if (!visited.Contains(neighbor))
+                if (visited.Add(neighbor))
                 {
-                    visited.Add(neighbor);
                     reachableTiles.Add(neighbor);
 
-                    // enter a room but cant path thru  it
-                    // Doors are terminal - you enter the room here, turn ends
-                    if (neighbor.Type != Tile.TileType.Room && neighbor.Type != Tile.TileType.Door)
+                    // doors act as t-nodes you enter your turn is cooked
+                    if (neighbor.Type is not Tile.TileType.Room and not Tile.TileType.Door and not Tile.TileType.SecretPassage)
+                    {
                         queue.Enqueue(new KeyValuePair<Tile, int>(neighbor, currentDistance + 1));
-                    
-                    if (neighbor.Type != Tile.TileType.Room && 
-                        neighbor.Type != Tile.TileType.Door &&
-                        neighbor.Type != Tile.TileType.SecretPassage)
-                        queue.Enqueue(new KeyValuePair<Tile, int>(neighbor, currentDistance + 1));
+                    }
                 }
             }
         }

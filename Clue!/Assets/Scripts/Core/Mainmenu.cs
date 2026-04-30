@@ -8,44 +8,30 @@ public class MainMenu : MonoBehaviour
     public GameObject optionsPanel;
 
     [Header("Scene Names")]
-    public string gameSceneName = "GameBoard";   // loads game scence
-    public string loadSceneName = "LoadScene";   // loads saved game
+    public string gameSceneName = "gameBoard";   
+    public string loadSceneName = "loadScene";   
 
-    void Start()
+    private void Start()
     {
-        if (AudioManager.Instance != null) AudioManager.Instance.PlayMenuMusic();
+        AudioManager.Instance?.PlayMenuMusic();
         ShowMainMenu();
     }
 
-    //main game scene
-    public void StartGame()
-    {
-        SceneManager.LoadScene(gameSceneName);
-    }
+    public void StartGame() => SceneManager.LoadScene(gameSceneName);
 
-    // continue previous game
-    public void LoadGame()
-    {
-        SceneManager.LoadScene(loadSceneName);
-    }
+    public void LoadGame() => SceneManager.LoadScene(loadSceneName);
 
-    // options and menu panel
     public void OpenOptions()
     {
         mainMenuPanel.SetActive(false);
         optionsPanel.SetActive(true);
     }
 
-    // return back button
-    public void BackToMenu()
-    {
-        ShowMainMenu();
-    }
+    public void BackToMenu() => ShowMainMenu();
 
-    //quits game
     public void QuitGame()
     {
-        Debug.Log("Quit Game");
+        Debug.Log("rage quit");
         Application.Quit();
 
 #if UNITY_EDITOR
@@ -53,8 +39,7 @@ public class MainMenu : MonoBehaviour
 #endif
     }
 
-    // show main menu
-    void ShowMainMenu()
+    private void ShowMainMenu()
     {
         mainMenuPanel.SetActive(true);
         optionsPanel.SetActive(false);
