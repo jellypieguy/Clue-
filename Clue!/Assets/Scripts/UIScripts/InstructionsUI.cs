@@ -1,19 +1,18 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class InstructionsUI : MonoBehaviour
 {
-    [Header("UI Ref")]
-    [SerializeField] private GameObject instructionsPanel; // show/hide panel
-    [SerializeField] private Button closeButton;          // back button
-    [SerializeField] private CanvasGroup canvasGroup;  //animeation     
+    [SerializeField] private GameObject instructionsPanel;
+    [SerializeField] private Button closeButton;
+    [SerializeField] private CanvasGroup canvasGroup;
 
     private void Awake()
     {
-
-        if (canvasGroup != null)
-            canvasGroup.alpha = 0f;
+        if (canvasGroup != null) canvasGroup.alpha = 0f;
+        
         instructionsPanel.SetActive(false);
         closeButton.onClick.AddListener(Hide);
     }
@@ -21,36 +20,39 @@ public class InstructionsUI : MonoBehaviour
     public void Show()
     {
         instructionsPanel.SetActive(true);
-        StartFade(0f, 1f, 0.2f);
+        TriggerFade(0f, 1f, 0.2f);
     }
 
     public void Hide()
     {
-        StartFade(1f, 0f, 0.2f, () => instructionsPanel.SetActive(false));
+        TriggerFade(1f, 0f, 0.2f, () => instructionsPanel.SetActive(false));
     }
 
-    private void StartFade(float from, float to, float duration, System.Action onComplete = null)
+    private void TriggerFade(float startAlpha, float targetAlpha, float duration, Action onComplete = null)
     {
         if (canvasGroup == null)
         {
             onComplete?.Invoke();
             return;
         }
+        
         StopAllCoroutines();
-        StartCoroutine(FadeRoutine(from, to, duration, onComplete));
+        StartCoroutine(FadeRoutine(startAlpha, targetAlpha, duration, onComplete));
     }
 
-    private IEnumerator FadeRoutine(float from, float to, float duration, System.Action onComplete)
+    private IEnumerator FadeRoutine(float startAlpha, float targetAlpha, float duration, Action onComplete)
     {
         float elapsed = 0f;
-        canvasGroup.alpha = from;
+        canvasGroup.alpha = startAlpha;
+        
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
-            canvasGroup.alpha = Mathf.Lerp(from, to, elapsed / duration);
+            canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, elapsed / duration);
             yield return null;
         }
-        canvasGroup.alpha = to;
+        
+        canvasGroup.alpha = targetAlpha;
         onComplete?.Invoke();
     }
 }

@@ -1,40 +1,37 @@
 using UnityEngine;
 using TMPro;
-using System.Collections.Generic;
+using System.Linq;
 
 public class SuggestionUI : MonoBehaviour
 {
-    public TMP_Dropdown suspectDropdown;
-    public TMP_Dropdown weaponDropdown;
-    public GameObject panel;
+    [SerializeField] private TMP_Dropdown suspectDropdown;
+    [SerializeField] private TMP_Dropdown weaponDropdown;
+    [SerializeField] private GameObject suggestionPanel;
 
     public void Show()
     {
-        panel.SetActive(true);
+        suggestionPanel.SetActive(true);
         PopulateDropdowns();
     }
 
-    void PopulateDropdowns()
+    private void PopulateDropdowns()
     {
         suspectDropdown.ClearOptions();
         weaponDropdown.ClearOptions();
 
-        List<string> suspects = new List<string>();
-        foreach (var card in DeckManager.Instance.AllSuspects) suspects.Add(card.CardName);
+        var suspects = DeckManager.Instance.AllSuspects.Select(c => c.CardName).ToList();
         suspectDropdown.AddOptions(suspects);
 
-        List<string> weapons = new List<string>();
-        foreach (var card in DeckManager.Instance.AllWeapons) weapons.Add(card.CardName);
+        var weapons = DeckManager.Instance.AllWeapons.Select(c => c.CardName).ToList();
         weaponDropdown.AddOptions(weapons);
     }
 
     public void OnConfirmClicked()
     {
-        CardData selectedSuspect = DeckManager.Instance.AllSuspects[suspectDropdown.value];
-        CardData selectedWeapon = DeckManager.Instance.AllWeapons[weaponDropdown.value];
+        var targetSuspect = DeckManager.Instance.AllSuspects[suspectDropdown.value];
+        var targetWeapon = DeckManager.Instance.AllWeapons[weaponDropdown.value];
 
-        // The GameManager handles pulling the room from the player's current tile
-        GameManager.Instance.HumanSuggestion(selectedSuspect, selectedWeapon);
-        panel.SetActive(false);
+        GameManager.Instance.HumanSuggestion(targetSuspect, targetWeapon);
+        suggestionPanel.SetActive(false);
     }
 }

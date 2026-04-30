@@ -1,31 +1,20 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public enum AIDifficulty { Easy, Medium, Hard }
 
-//  setup screen rooms, player count whem game starts.
+// Persists lobby configs (bot count, banned rooms, etc) across scenes
 public class GameSettings : MonoBehaviour
 {
     public static GameSettings Instance { get; private set; }
 
     public AIDifficulty AIDifficultyLevel { get; private set; } = AIDifficulty.Easy;
 
-    // NoP and how many of those bots
-    public int TotalPlayers     { get; private set; } = 6;
+    public int TotalPlayers { get; private set; } = 6;
     public int HumanPlayerCount { get; private set; } = 1;
 
-    private readonly HashSet<CardData> _disabledRooms = new HashSet<CardData>();
-
-    public void SetTotalPlayers(int n)
-    {
-        TotalPlayers = Mathf.Clamp(n, 2, 6);
-        // count cann't exceed the new total
-        HumanPlayerCount = Mathf.Clamp(HumanPlayerCount, 1, TotalPlayers);
-    }
-
-    public void SetHumanCount(int n) => HumanPlayerCount = Mathf.Clamp(n, 1, TotalPlayers);
-
-    public void SetAIDifficulty(AIDifficulty diff) => AIDifficultyLevel = diff;
+    private readonly HashSet<CardData> disabledRooms = new();
 
     private void Awake()
     {
@@ -38,31 +27,29 @@ public class GameSettings : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    // toggle in/out room of
+    public void SetTotalPlayers(int count)
+    {
+        TotalPlayers = Mathf.Clamp(count, 2, 6);
+        // Ensure human count doesn't overflow the new lobby size
+        HumanPlayerCount = Mathf.Clamp(HumanPlayerCount, 1, TotalPlayers);
+    }
+
+    public void SetHumanCount(int count) => HumanPlayerCount = Mathf.Clamp(count, 1, TotalPlayers);
+
+    public void SetAIDifficulty(AIDifficulty difficulty) => AIDifficultyLevel = difficulty;
+
     public void ToggleRoom(CardData room)
     {
         if (room == null) return;
 
-        if (_disabledRooms.Contains(room))
-            _disabledRooms.Remove(room);
-        else
-            _disabledRooms.Add(room);
-    }
-
-    public bool IsRoomDisabled(CardData room)
-    {
-        return room != null && _disabledRooms.Contains(room);
-    }
-
-    // return num of  rooms from full list that are active
-    // stop event of removing every room
-    public int ActiveRoomCount(List<CardData> allRooms)
-    {
-        int count = 0;
-        foreach (CardData r in allRooms)
+        if (!disabledRooms.Add(room))
         {
-            if (!IsRoomDisabled(r)) count++;
+            disabledRooms.Remove(room);
         }
-        return count;
     }
+
+    public bool IsRoomDisabled(CardData room) => room != null && disabledRooms.Contains(room);
+
+    public int ActiveRoomCount(List<CardData> allRooms) => 
+        allRooms.Count(r => !IsRoomDisabled(r));
 }

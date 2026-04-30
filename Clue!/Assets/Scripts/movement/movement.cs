@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-//  camera pan w/ keyboard and r_click and drag
+// why am i having to do lowercase class?? who tf keeps doing lowercase stuff in unity??????
 public class movement : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -10,79 +10,70 @@ public class movement : MonoBehaviour
     [SerializeField] private float dragSensitivity = 1.0f;
 
     [Header("Boundaries")]
-    [SerializeField] private Vector2 minBounds = new Vector2(-20f, -20f);
-    [SerializeField] private Vector2 maxBounds = new Vector2(20f, 20f);
+    [SerializeField] private Vector2 minBounds = new(-20f, -20f);
+    [SerializeField] private Vector2 maxBounds = new(20f, 20f);
 
-    private Camera _cam;
-    private Vector3 _targetPosition;
-    private Vector3 _currentVelocity = Vector3.zero;
-    private bool _initialized = false;
+    private Camera cam;
+    private Vector3 targetPosition;
+    private Vector3 currentVelocity = Vector3.zero;
+    private bool isInitialized = false;
 
-    private void Awake()
-    {
-        _cam = GetComponent<Camera>();
-    }
+    private void Awake() => cam = GetComponent<Camera>();
 
-    private void Start()
-    {
-        _targetPosition = transform.position;
-    }
+    private void Start() => targetPosition = transform.position;
 
     private void Update()
     {
-        // cam fit adjusts pos at its start
-        if (!_initialized)
+        if (!isInitialized)
         {
-            _targetPosition = transform.position;
-            _initialized = true;
+            targetPosition = transform.position;
+            isInitialized = true;
         }
 
-        HandleInput();
-        MoveCamera();
-    }
-
-    private void HandleInput()
-    {
         HandleKeyboardInput();
-        HandleMouseDragInput();
+        HandleMouseDrag();
 
-        _targetPosition.x = Mathf.Clamp(_targetPosition.x, minBounds.x, maxBounds.x);
-        _targetPosition.y = Mathf.Clamp(_targetPosition.y, minBounds.y, maxBounds.y);
+        targetPosition.x = Mathf.Clamp(targetPosition.x, minBounds.x, maxBounds.x);
+        targetPosition.y = Mathf.Clamp(targetPosition.y, minBounds.y, maxBounds.y);
+
+        transform.position = Vector3.SmoothDamp(
+            transform.position, 
+            new Vector3(targetPosition.x, targetPosition.y, transform.position.z), 
+            ref currentVelocity, 
+            smoothTime
+        );
     }
 
     private void HandleKeyboardInput()
     {
         if (Keyboard.current == null) return;
 
-        Vector2 input = Vector2.zero;
-        if (Keyboard.current.wKey.isPressed || Keyboard.current.upArrowKey.isPressed) input.y += 1;
-        if (Keyboard.current.sKey.isPressed || Keyboard.current.downArrowKey.isPressed) input.y -= 1;
-        if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) input.x -= 1;
-        if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) input.x += 1;
+        var input = Vector2.zero;
+        var keys = Keyboard.current;
+
+        // WASD + arrow keys 
+        if (keys.wKey.isPressed || keys.upArrowKey.isPressed) input.y += 1;
+        if (keys.sKey.isPressed || keys.downArrowKey.isPressed) input.y -= 1;
+        if (keys.aKey.isPressed || keys.leftArrowKey.isPressed) input.x -= 1;
+        if (keys.dKey.isPressed || keys.rightArrowKey.isPressed) input.x += 1;
 
         if (input != Vector2.zero)
-            _targetPosition += new Vector3(input.x, input.y, 0).normalized * moveSpeed * Time.deltaTime;
+            targetPosition += moveSpeed * Time.deltaTime * new Vector3(input.x, input.y, 0).normalized;
     }
 
-    private void HandleMouseDragInput()
+    private void HandleMouseDrag()
     {
-        if (Mouse.current == null || _cam == null) return;
+        if (Mouse.current == null || cam == null) return;
 
+        // r_mouseclick drag to look 
         if (Mouse.current.rightButton.isPressed)
         {
-            Vector2 mouseDelta = Mouse.current.delta.ReadValue();
-            if (mouseDelta != Vector2.zero)
+            var dragDelta = Mouse.current.delta.ReadValue();
+            if (dragDelta != Vector2.zero)
             {
-                float screenFactor = _cam.orthographicSize * 2f / Screen.height;
-                // nice drag feel
-                _targetPosition -= new Vector3(mouseDelta.x, mouseDelta.y, 0) * screenFactor * dragSensitivity;
+                float screenFactor = cam.orthographicSize * 2f / Screen.height;
+                targetPosition -= new Vector3(dragDelta.x, dragDelta.y, 0) * screenFactor * dragSensitivity;
             }
         }
-    }
-
-    private void MoveCamera()
-    {
-        Vector3 destination = new Vector3(_targetPosition.x, _targetPosition.y, transform.position.z);
-        transform.position = Vector3.SmoothDamp(transform.position, destination, ref _currentVelocity, smoothTime);
     }
 }

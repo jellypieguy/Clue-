@@ -1,16 +1,13 @@
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 
 public class NotepadUI : MonoBehaviour
 {
     public GameObject panel;
-    public Transform contentParent; // The scroll view content object
-    public GameObject rowPrefab;   // A prefab with a text label and 3 toggles
+    public Transform contentParent; 
+    public GameObject rowPrefab;
 
-    void Start()
+    private void Start()
     {
-        // Hide by default
         panel.SetActive(false);
     }
 
@@ -20,20 +17,29 @@ public class NotepadUI : MonoBehaviour
         if (panel.activeSelf) RefreshNotepad();
     }
 
-    void RefreshNotepad()
+    private void RefreshNotepad()
     {
-        // Clear old rows
-        foreach (Transform child in contentParent) Destroy(child.gameObject);
+        // nukes the old UI rows before rebuilding
+        foreach (Transform child in contentParent) 
+        {
+            Destroy(child.gameObject);
+        }
 
-        // Get the current human player
-        Player human = TurnManager.Instance.CurrentPlayer.GetComponent<Player>();
+        if (TurnManager.Instance?.CurrentPlayer == null) return;
+        
+        if (!TurnManager.Instance.CurrentPlayer.TryGetComponent<Player>(out var humanPlayer)) 
+            return;
 
-        // Create a row for every card in the deck
-        var allCards = DeckManager.Instance.GetAllCardsOrdered(); // We'll add this helper to DeckManager
+        // Note: deck manager needs GetAllCardsOrdered() for this
+        var allCards = DeckManager.Instance.GetAllCardsOrdered(); 
+        
         for (int i = 0; i < allCards.Count; i++)
         {
-            GameObject row = Instantiate(rowPrefab, contentParent);
-            row.GetComponent<NotepadRow>().Setup(i, allCards[i].CardName, human);
+            var rowObj = Instantiate(rowPrefab, contentParent);
+            if (rowObj.TryGetComponent<NotepadRow>(out var rowComponent))
+            {
+                rowComponent.Setup(i, allCards[i].CardName, humanPlayer);
+            }
         }
     }
 }

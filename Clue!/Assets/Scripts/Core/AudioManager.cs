@@ -1,16 +1,13 @@
 using UnityEngine;
 
-// PLACEHOLDER AudioManager so the project compiles.
-// Currently just logs to the Console instead of playing sound effects
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
 
-    [Header("Audio Sources")]
-    [SerializeField] private AudioSource _musicSource;
-    [SerializeField] private AudioSource _sfxSource;
-    [SerializeField] private AudioClip _menuMusic;
-    [SerializeField] private AudioClip _gameMusic;
+    [SerializeField] private AudioSource musicSource;
+    [SerializeField] private AudioSource sfxSource;
+    [SerializeField] private AudioClip menuMusic;
+    [SerializeField] private AudioClip gameMusic;
 
     private void Awake()
     {
@@ -19,69 +16,49 @@ public class AudioManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+        
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Auto-create sources if missing
-        if (_musicSource == null) _musicSource = gameObject.AddComponent<AudioSource>();
-        if (_sfxSource == null) _sfxSource = gameObject.AddComponent<AudioSource>();
+        musicSource ??= gameObject.AddComponent<AudioSource>();
+        sfxSource ??= gameObject.AddComponent<AudioSource>();
 
-        _musicSource.loop = true;
-        _musicSource.playOnAwake = false;
+        musicSource.loop = true;
+        musicSource.playOnAwake = false;
 
-        // Start with menu music if available
-        if (_menuMusic != null)
+        if (menuMusic != null)
         {
-            _musicSource.clip = _menuMusic;
-            _musicSource.Play();
+            musicSource.clip = menuMusic;
+            musicSource.Play();
         }
     }
 
-    public void PlayMenuMusic() => SwitchMusic(_menuMusic);
-    public void PlayGameMusic() => SwitchMusic(_gameMusic);
+    public void PlayMenuMusic() => SwitchMusic(menuMusic);
+    public void PlayGameMusic() => SwitchMusic(gameMusic);
 
     private void SwitchMusic(AudioClip newClip)
     {
-        if (newClip == null || _musicSource.clip == newClip) return;
+        if (newClip == null || musicSource.clip == newClip) return;
 
-        _musicSource.Stop();
-        _musicSource.clip = newClip;
-        _musicSource.Play();
+        musicSource.Stop();
+        musicSource.clip = newClip;
+        musicSource.Play();
     }
 
     public void SetMusicVolume(float volume)
     {
-        if (_musicSource != null) _musicSource.volume = volume;
+        if (musicSource != null) musicSource.volume = volume;
     }
 
-    public void ToggleMusic(bool isOn)
+    public void ToggleMusic(bool isEnabled)
     {
-        if (_musicSource != null)
-        {
-            if (isOn) _musicSource.Play();
-            else _musicSource.Pause();
-        }
+        if (musicSource == null) return;
+
+        if (isEnabled) musicSource.Play();
+        else musicSource.Pause();
     }
 
-    // Plays a footstep sound for player movement.
-    // Stubbed for now — logs to Console until real audio is added.
-    public void PlayFootstep()
-    {
-        // Real implementation would play an AudioClip via an AudioSource
-        // For now, just log silently (no Debug.Log to avoid spam every step)
-    }
-
-    // Plays a dice roll sound.
-    // Stubbed for now.
-    public void PlayDiceRoll()
-    {
-        // Real implementation would play an AudioClip via an AudioSource
-    }
-
-    // Plays a generic UI button click sound.
-    // Stubbed for now.
-    public void PlayClick()
-    {
-        // Real implementation would play an AudioClip via an AudioSource
-    }
+    public void PlayFootstep() { }
+    public void PlayDiceRoll() { }
+    public void PlayClick() { }
 }

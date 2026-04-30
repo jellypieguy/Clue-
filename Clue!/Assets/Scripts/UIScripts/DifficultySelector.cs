@@ -1,5 +1,4 @@
 using UnityEngine;
-using TMPro;
 
 public class DifficultySelector : MonoBehaviour
 {
@@ -7,11 +6,10 @@ public class DifficultySelector : MonoBehaviour
     {
         if (GameSettings.Instance == null) return;
 
-        //  dropdown for difficulty 
-        // 0 = easy 1 = medium 2 = hard
-        AIDifficulty selectedDifficulty = (AIDifficulty)index;
+        // UI difficulty  (0=ez, 1=med, 2=hard)
+        var selectedDifficulty = (AIDifficulty)index;
 
         GameSettings.Instance.SetAIDifficulty(selectedDifficulty);
-        Debug.Log($"AI Difficulty set to: {selectedDifficulty}");
+        Debug.Log($"[DifficultySelector] AI difficulty cranked to: {selectedDifficulty}");
     }
 }
