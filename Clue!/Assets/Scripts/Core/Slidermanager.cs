@@ -25,6 +25,10 @@ public class PlayerSelectionSlider : MonoBehaviour
     {
         int humans = Mathf.RoundToInt(value);
         valueLabel.text = humans + " player";
+        if (GameSettings.Instance != null)
+        {
+            GameSettings.Instance.SetHumanCount(humans);
+        }
     }
 
     // Saves the selected human player count when the start button is pressed

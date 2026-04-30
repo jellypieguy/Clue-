@@ -112,7 +112,11 @@ public class TurnManager : MonoBehaviour
 
         _currentPlayerIndex = 0;
         Debug.Log("The Murder Envelope has been sealed! The game begins.");
-        GameManager.Instance.ChangeState(GameManager.GameState.WaitingForRoll);
+        
+        if (CurrentPlayer.IsHuman && GameSettings.Instance != null && GameSettings.Instance.HumanPlayerCount > 1)
+            GameManager.Instance.ChangeState(GameManager.GameState.PassingDevice);
+        else
+            GameManager.Instance.ChangeState(GameManager.GameState.WaitingForRoll);
     }
 
     private void HandleGameStateChanged(GameManager.GameState state)
@@ -126,6 +130,8 @@ public class TurnManager : MonoBehaviour
     private void PassTurnToNextPlayer()
     {
         if (_playersInGame.Count == 0) return;
+
+        if (CurrentPlayer != null) CurrentPlayer.ClearReachableHighlights(); // Clear OLD player highlights
 
         int originalIndex = _currentPlayerIndex;
         bool foundActivePlayer = false;
@@ -156,6 +162,10 @@ public class TurnManager : MonoBehaviour
     private IEnumerator BeginNextTurn()
     {
         yield return null; // wait one frame
-        GameManager.Instance.ChangeState(GameManager.GameState.WaitingForRoll);
+        
+        if (CurrentPlayer.IsHuman && GameSettings.Instance != null && GameSettings.Instance.HumanPlayerCount > 1)
+            GameManager.Instance.ChangeState(GameManager.GameState.PassingDevice);
+        else
+            GameManager.Instance.ChangeState(GameManager.GameState.WaitingForRoll);
     }
 }

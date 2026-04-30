@@ -53,6 +53,20 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public Color GetCharacterColor()
+    {
+        return Character switch
+        {
+            CharacterType.MissScarlet => Color.red,
+            CharacterType.ColMustard  => new Color(1f, 0.8f, 0f),
+            CharacterType.MrsWhite    => Color.white,
+            CharacterType.MrGreen     => Color.green,
+            CharacterType.MrsPeacock  => new Color(0f, 0.4f, 1f),
+            CharacterType.ProfPlum    => new Color(0.5f, 0f, 0.5f),
+            _ => Color.white
+        };
+    }
+
     private void Start()
     {
         if (DiceRoller.Instance != null)
@@ -69,6 +83,9 @@ public class PlayerController : MonoBehaviour
     {
         _currentTile = startingTile;
         transform.position = _currentTile.transform.position;
+
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null) sr.color = GetCharacterColor();
     }
 
     // secret passage to the linked room triggers a suggestion
@@ -90,11 +107,19 @@ public class PlayerController : MonoBehaviour
     // teleports char to a tile used when they are named in a suggestion
     public void TeleportToTile(Tile targetTile)
     {
+        ClearReachableHighlights();
         if (targetTile != null && !_isMoving)
         {
             _currentTile = targetTile;
             transform.position = targetTile.transform.position + new Vector3(-0.2f, 0.2f, 0);
         }
+    }
+
+    public void ClearReachableHighlights()
+    {
+        foreach (Tile t in _reachableTiles)
+            t.RemoveHighlight();
+        _reachableTiles.Clear();
     }
 
     private void HandleDiceRolled(int rollTotal)
@@ -115,8 +140,8 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
-        if (TurnManager.Instance != null && TurnManager.Instance.CurrentPlayer != this) return;
-        if (GameManager.Instance.CurrentState != GameManager.GameState.Moving || _isMoving) return;
+        if (TurnManager.Instance == null || TurnManager.Instance.CurrentPlayer != this) return;
+        if (GameManager.Instance == null || GameManager.Instance.CurrentState != GameManager.GameState.Moving || _isMoving) return;
 
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
             HandleMouseClick();
@@ -137,9 +162,7 @@ public class PlayerController : MonoBehaviour
             Tile clickedTile = hit.GetComponent<Tile>();
             if (clickedTile != null && _reachableTiles.Contains(clickedTile))
             {
-                foreach (Tile t in _reachableTiles)
-                    t.RemoveHighlight();
-
+                ClearReachableHighlights();
                 StartCoroutine(MoveToTile(clickedTile));
                 return;
             }
@@ -168,17 +191,6 @@ public class PlayerController : MonoBehaviour
         _reachableTiles.Clear();
 
         // door arrival = entering the adjacent room
-        if (_currentTile.Type == Tile.TileType.Room || _currentTile.Type == Tile.TileType.Door)
-        {
-            string roomName = _currentTile.RoomData != null ? _currentTile.RoomData.CardName : "a room";
-            Debug.Log($"{Character} entered {roomName} — switching to Suggesting.");
-            GameManager.Instance.ChangeState(GameManager.GameState.Suggesting);
-        }
-        else
-        {
-            Debug.Log($"{Character} landed in hallway — turn ends.");
-            GameManager.Instance.ChangeState(GameManager.GameState.EndTurn);
-        }
         if (_currentTile.Type == Tile.TileType.Room || _currentTile.Type == Tile.TileType.Door)
         {
             string roomName = _currentTile.RoomData != null ? _currentTile.RoomData.CardName : "a room";

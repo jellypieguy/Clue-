@@ -59,6 +59,17 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Toggle muteToggle;
     [SerializeField] private Button resumeButton;
 
+    // ── Pass Device panel ────────────────────────────────────────────────
+    [Header("Pass Device Panel")]
+    [SerializeField] private GameObject passDevicePanel;
+    [SerializeField] private TextMeshProUGUI passDeviceText;
+    [SerializeField] private Button passDeviceContinueButton;
+
+    // ── Player Hand ──────────────────────────────────────────────────────
+    [Header("Player Hand")]
+    [SerializeField] private Transform handContainer;
+    [SerializeField] private GameObject cardPrefab;
+
     private bool isPaused = false;
     
     private void Awake()
@@ -92,6 +103,8 @@ public class UIManager : MonoBehaviour
         if (resumeButton != null)                resumeButton.onClick.AddListener(TogglePauseMenu);
         if (volumeSlider != null)                volumeSlider.onValueChanged.AddListener(OnVolumeChanged);
         if (muteToggle != null)                  muteToggle.onValueChanged.AddListener(OnMuteToggled);
+        
+        if (passDeviceContinueButton != null)    passDeviceContinueButton.onClick.AddListener(OnPassDeviceContinue);
 
         if (GameManager.Instance != null)
             GameManager.Instance.OnGameStateChanged += HandleGameStateChanged;
@@ -104,6 +117,7 @@ public class UIManager : MonoBehaviour
         SetCardRevealPanel(false);
         SetGameOverPanel(false);
         if (pausePanel != null) pausePanel.SetActive(false);
+        SetPassDevicePanel(false);
 
         // Initialize display with whatever state the game is already in
         if (TurnManager.Instance != null && TurnManager.Instance.CurrentPlayer != null)
@@ -174,6 +188,21 @@ public class UIManager : MonoBehaviour
     {
         UpdateButtonStates(state);
 
+        if (state == GameManager.GameState.PassingDevice)
+        {
+            if (passDeviceText != null && TurnManager.Instance.CurrentPlayer != null)
+                passDeviceText.text = $"{TurnManager.Instance.CurrentPlayer.Character}'s Turn!\nPass the device.";
+            SetPassDevicePanel(true);
+            if (handContainer != null) handContainer.gameObject.SetActive(false);
+        }
+        else
+        {
+            SetPassDevicePanel(false);
+            // Show hand again if a human's turn resumes (or starts)
+            if (TurnManager.Instance != null && TurnManager.Instance.CurrentPlayer != null && TurnManager.Instance.CurrentPlayer.IsHuman)
+                UpdateHandDisplay(TurnManager.Instance.CurrentPlayer);
+        }
+
         if (state == GameManager.GameState.GameOver)
             ShowGameOver(null);
     }
@@ -182,6 +211,8 @@ public class UIManager : MonoBehaviour
     {
         if (currentPlayerText != null)
             currentPlayerText.text = $"Current Player: {newPlayer.Character}";
+            
+        UpdateHandDisplay(newPlayer);
     }
 
     private void UpdateButtonStates(GameManager.GameState state)
@@ -301,5 +332,55 @@ public class UIManager : MonoBehaviour
     private void SetGameOverPanel(bool active)
     {
         if (gameOverPanel != null) gameOverPanel.SetActive(active);
+    }
+
+    private void SetPassDevicePanel(bool active)
+    {
+        if (passDevicePanel != null) passDevicePanel.SetActive(active);
+    }
+
+    private void OnPassDeviceContinue()
+    {
+        GameManager.Instance.ChangeState(GameManager.GameState.WaitingForRoll);
+    }
+
+    private void UpdateHandDisplay(PlayerController player)
+    {
+        if (handContainer == null || cardPrefab == null) return;
+
+        // Clear existing cards
+        foreach (Transform child in handContainer)
+        {
+            Destroy(child.gameObject);
+        }
+
+        if (player == null || !player.IsHuman || GameManager.Instance.CurrentState == GameManager.GameState.PassingDevice)
+        {
+            handContainer.gameObject.SetActive(false);
+            return;
+        }
+
+        PlayerHand hand = player.GetComponent<PlayerHand>();
+        if (hand != null && hand.Cards.Count > 0)
+        {
+            Debug.Log($"[UIManager] Displaying {hand.Cards.Count} cards for {player.Character}");
+            handContainer.gameObject.SetActive(true);
+            foreach (CardData card in hand.Cards)
+            {
+                GameObject cardObj = Instantiate(cardPrefab, handContainer);
+                
+                // Set the text
+                TextMeshProUGUI txt = cardObj.GetComponentInChildren<TextMeshProUGUI>();
+                if (txt != null) txt.text = card.CardName;
+
+                // Set the image if there is one on the card data
+                Image img = cardObj.GetComponent<Image>();
+                if (img != null && card.CardImage != null) img.sprite = card.CardImage;
+            }
+        }
+        else
+        {
+            handContainer.gameObject.SetActive(false);
+        }
     }
 }

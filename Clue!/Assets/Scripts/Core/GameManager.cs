@@ -1,7 +1,7 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System;
-
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
@@ -9,6 +9,7 @@ public class GameManager : MonoBehaviour
     public enum GameState
     {
         Setup,
+        PassingDevice,
         WaitingForRoll,
         Moving,
         Suggesting,
@@ -77,11 +78,7 @@ public class GameManager : MonoBehaviour
         TurnManager.Instance.StartFirstTurn();
         if (AudioManager.Instance != null) AudioManager.Instance.PlayGameMusic();
 
-        Debug.Log($"[GameManager] Game setup complete. {humanCount} human(s), {totalPlayers - humanCount} AI.");
-        TurnManager.Instance.StartFirstTurn();
-    
-        AutoMarkHumanHand(); // ← add this line at the end
-    
+        AutoMarkHumanHand();
         Debug.Log($"[GameManager] Game setup complete. {humanCount} human(s), {totalPlayers - humanCount} AI.");
     }
 
@@ -152,18 +149,25 @@ public class GameManager : MonoBehaviour
 
     private void HandleAIMove(PlayerController current)
     {
+        StartCoroutine(AIMoveRoutine(current));
+    }
+
+    private IEnumerator AIMoveRoutine(PlayerController current)
+    {
+        yield return new WaitForSeconds(1.5f); // Let the player see who's moving
+
         if (aiAgent == null)
         {
             Debug.LogWarning("[GameManager] No AIAgent in scene, ending AI turn.");
             ChangeState(GameState.EndTurn);
-            return;
+            yield break;
         }
 
         CardData target = aiAgent.ChooseTargetRoom(current);
         if (target == null)
         {
             ChangeState(GameState.EndTurn);
-            return;
+            yield break;
         }
 
         Tile destTile = GridManager.Instance.GetRoomTile(target);
@@ -181,10 +185,17 @@ public class GameManager : MonoBehaviour
 
     private void HandleAISuggestion(PlayerController current)
     {
+        StartCoroutine(AISuggestionRoutine(current));
+    }
+
+    private IEnumerator AISuggestionRoutine(PlayerController current)
+    {
+        yield return new WaitForSeconds(1.0f); // Readability delay
+
         if (aiAgent == null || suggestionSystem == null)
         {
             ChangeState(GameState.EndTurn);
-            return;
+            yield break;
         }
 
         int playerIndex = TurnManager.Instance.GetPlayers().IndexOf(current);
@@ -195,6 +206,8 @@ public class GameManager : MonoBehaviour
             aiAgent.RecordShownCard(current, shownCard);
         }
 
+        yield return new WaitForSeconds(1.5f); // Pause so humans can read the suggestion popup
+
         if (aiAgent.ShouldAccuse(current))
             ChangeState(GameState.Accusing);
         else
@@ -203,10 +216,17 @@ public class GameManager : MonoBehaviour
 
     private void HandleAIAccusation(PlayerController current)
     {
+        StartCoroutine(AIAccusationRoutine(current));
+    }
+
+    private IEnumerator AIAccusationRoutine(PlayerController current)
+    {
+        yield return new WaitForSeconds(1.0f);
+
         if (aiAgent == null)
         {
             ChangeState(GameState.EndTurn);
-            return;
+            yield break;
         }
 
         CardData[] accusation = aiAgent.MakeAccusation(current);
