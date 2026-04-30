@@ -156,35 +156,87 @@ public class GameManager : MonoBehaviour
     }
 
     private IEnumerator AIMoveRoutine(PlayerController current)
+{
+    yield return new WaitForSeconds(1.5f);
+
+    if (aiAgent == null)
     {
-        yield return new WaitForSeconds(1.5f); // Let the player see who's moving
-
-        if (aiAgent == null)
-        {
-            Debug.LogWarning("[GameManager] No AIAgent in scene, ending AI turn.");
-            ChangeState(GameState.EndTurn);
-            yield break;
-        }
-
-        CardData target = aiAgent.ChooseTargetRoom(current);
-        if (target == null)
-        {
-            ChangeState(GameState.EndTurn);
-            yield break;
-        }
-
-        Tile destTile = GridManager.Instance.GetRoomTile(target);
-        if (destTile != null)
-        {
-            current.TeleportToTile(destTile);
-            Debug.Log($"[GameManager] {current.Character} moves to {target.CardName}.");
-            ChangeState(GameState.Suggesting);
-        }
-        else
-        {
-            ChangeState(GameState.EndTurn);
-        }
+        Debug.LogWarning("[GameManager] No AIAgent in scene, ending AI turn.");
+        ChangeState(GameState.EndTurn);
+        yield break;
     }
+
+    // Get reachable tiles using the same pathfinder as the human
+    int roll = DiceRoller.Instance.LastRoll;
+    HashSet<Tile> reachable = Pathfinder.GetReachableTiles(current.CurrentTile, roll);
+
+    if (reachable.Count == 0)
+    {
+        Debug.Log($"[AI] {current.Character} has no reachable tiles.");
+        ChangeState(GameState.EndTurn);
+        yield break;
+    }
+
+    // Prefer door/room tiles so AI can make a suggestion
+    List<Tile> roomTiles = new List<Tile>();
+    List<Tile> hallwayTiles = new List<Tile>();
+
+    foreach (Tile t in reachable)
+    {
+        if (t.Type == Tile.TileType.Door || t.Type == Tile.TileType.Room)
+            roomTiles.Add(t);
+        else
+            hallwayTiles.Add(t);
+    }
+
+    // Pick a room tile if possible, otherwise pick any hallway tile
+    List<Tile> candidates = roomTiles.Count > 0 ? roomTiles : hallwayTiles;
+    Tile chosenTile = candidates[UnityEngine.Random.Range(0, candidates.Count)];
+
+    Debug.Log($"[AI] {current.Character} moving to {chosenTile.name}");
+
+    // Use the same MoveToTile logic as human — animate and trigger state change
+    current.ClearReachableHighlights();
+    yield return StartCoroutine(AIMoveToTile(current, chosenTile));
+}
+
+private IEnumerator AIMoveToTile(PlayerController current, Tile targetTile)
+{
+    Vector3 startPos = current.transform.position;
+    Vector3 targetPos = targetTile.transform.position;
+    float elapsed = 0f;
+    float duration = 0.5f;
+
+    while (elapsed < duration)
+    {
+        current.transform.position = Vector3.Lerp(startPos, targetPos, elapsed / duration);
+        elapsed += Time.deltaTime;
+        yield return null;
+    }
+
+    current.transform.position = targetPos;
+
+    // Mirror exactly what MoveToTile does in PlayerController
+    if (targetTile.Type == Tile.TileType.Room || targetTile.Type == Tile.TileType.Door)
+    {
+        string roomName = targetTile.RoomData != null ? targetTile.RoomData.CardName : "a room";
+        Debug.Log($"[AI] {current.Character} entered {roomName}.");
+        // Manually update CurrentTile via TeleportToTile since _currentTile is private
+        current.TeleportToTile(targetTile);
+        ChangeState(GameState.Suggesting);
+    }
+    else if (targetTile.Type == Tile.TileType.SecretPassage)
+    {
+        current.TeleportToTile(targetTile);
+        current.UseSecretPassage();
+    }
+    else
+    {
+        current.TeleportToTile(targetTile);
+        Debug.Log($"[AI] {current.Character} stuck in hallway.");
+        ChangeState(GameState.EndTurn);
+    }
+}
 
     private void HandleAISuggestion(PlayerController current)
     {
@@ -250,10 +302,13 @@ public class GameManager : MonoBehaviour
 
     public void HumanSuggestion(CardData suspect, CardData weapon)
     {
+        Debug.Log($"[Suggestion] Called. CurrentPlayer={TurnManager.Instance?.CurrentPlayer?.Character}");
         PlayerController current = TurnManager.Instance.CurrentPlayer;
         if (current == null) return;
-
+        Debug.Log($"[Suggestion] Tile={current.CurrentTile?.name}, Type={current.CurrentTile?.Type}, RoomData={current.CurrentTile?.RoomData}");
+        
         CardData currentRoom = current.CurrentTile?.RoomData;
+
         if (currentRoom == null)
         {
             Debug.Log("[GameManager] You must be in a room to make a suggestion.");

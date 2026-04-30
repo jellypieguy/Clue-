@@ -7,8 +7,10 @@ using System.Collections;
 public class DiceRoller : MonoBehaviour
 {
     public static DiceRoller Instance { get; private set; }
+    public int LastRoll { get; private set; }
 
     public event Action<int> OnDiceRolled;
+    
 
     [Header("UI")]
     [Tooltip("Text element that shows face values during the roll.")]
@@ -108,7 +110,7 @@ public class DiceRoller : MonoBehaviour
         // pause so the player can read the result, then hide and advance
         yield return new WaitForSeconds(1.5f);
         SetDiceVisible(false);
-
+        LastRoll = total;
         OnDiceRolled?.Invoke(total);
         GameManager.Instance.ChangeState(GameManager.GameState.Moving);
     }
