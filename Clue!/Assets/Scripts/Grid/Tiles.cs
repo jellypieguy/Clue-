@@ -50,11 +50,11 @@ public class Tile : MonoBehaviour
             {
                 case TileType.Hallway:
                 case TileType.Spawn:
-                    _sr.color = new Color(1f, 1f, 0.85f); break;     // cream
+                    _sr.color = new Color(0f, 0f, 0f, 0f); break; // transparent
                 case TileType.Room:
                     _sr.color = new Color(0f, 0f, 0f, 0f); break;  // transparent
                 case TileType.Door:
-                    _sr.color = new Color(0.9f, 0.7f, 0.2f); break;  // gold
+                    _sr.color = new Color(0.9f, 0.7f, 0.2f, 0.5f); break; // semi-transparent gold
                 case TileType.Cellar:
                     _sr.color = new Color(0.6f, 0.1f, 0.1f); break;  // maroon
                 case TileType.Wall:

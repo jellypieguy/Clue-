@@ -16,6 +16,9 @@ public class GridManager : MonoBehaviour
 
     [SerializeField] private Tile tilePrefab;
 
+    [Header("Board Image")]
+    [SerializeField] private Sprite _boardImage;
+
     [Header("Room Card Data (assign in Inspector)")]
     [Tooltip("0=Study 1=Hall 2=Lounge 3=Library 4=DiningRoom 5=BilliardRoom 6=Conservatory 7=Ballroom 8=Kitchen")]
     [SerializeField] private CardData[] _roomCards = new CardData[9];
@@ -90,27 +93,33 @@ public class GridManager : MonoBehaviour
         float startX = -GridWidth / 2f + 0.5f;
         float startY = -GridHeight / 2f + 0.5f;
 
-        SpriteRenderer prefabSR = tilePrefab != null ? tilePrefab.GetComponent<SpriteRenderer>() : null;
-        Sprite tileSprite = prefabSR != null ? prefabSR.sprite : null;
-
-        // background and grid
+        // Board background image
         GameObject boardBase = new("BoardBackground");
         boardBase.transform.SetParent(transform);
         boardBase.transform.localPosition = new(0, 0, 0.5f);
         SpriteRenderer baseSR = boardBase.AddComponent<SpriteRenderer>();
-        baseSR.sprite = tileSprite;
-        baseSR.color = new(0.05f, 0.05f, 0.05f);
-        baseSR.drawMode = SpriteDrawMode.Simple;
-        boardBase.transform.localScale = new(GridWidth + 1f, GridHeight + 1f, 1);
+        baseSR.sortingOrder = 2;
 
-        GameObject borderBase = new("BlackBorders");
-        borderBase.transform.SetParent(transform);
-        borderBase.transform.localPosition = new(0, 0, 0.25f);
-        SpriteRenderer borderSR = borderBase.AddComponent<SpriteRenderer>();
-        borderSR.sprite = tileSprite;
-        borderSR.color = Color.black;
-        borderSR.drawMode = SpriteDrawMode.Simple;
-        borderBase.transform.localScale = new(GridWidth, GridHeight, 1);
+        if (_boardImage != null)
+        {
+            baseSR.sprite = _boardImage;
+            baseSR.color  = Color.white;
+            float spriteW = _boardImage.bounds.size.x;
+            float spriteH = _boardImage.bounds.size.y;
+            boardBase.transform.localScale = new Vector3(
+                (GridWidth  / spriteW) * 1.21f,
+                (GridHeight / spriteH) * 1.21f,
+                1f
+            );
+        }
+        else
+        {
+            SpriteRenderer prefabSR = tilePrefab != null ? tilePrefab.GetComponent<SpriteRenderer>() : null;
+            baseSR.sprite    = prefabSR != null ? prefabSR.sprite : null;
+            baseSR.color     = new Color(0.05f, 0.05f, 0.05f);
+            baseSR.drawMode  = SpriteDrawMode.Simple;
+            boardBase.transform.localScale = new(GridWidth + 1f, GridHeight + 1f, 1);
+        }
 
         for (int x = 0; x < GridWidth; x++)
         {
@@ -224,8 +233,8 @@ public class GridManager : MonoBehaviour
             CardData card = _roomCards[i];
             if (card == null) continue;
 
-            float cx = (RoomRegions[i, 0] + RoomRegions[i, 1]) * 0.5f;
-            float cy = (RoomRegions[i, 2] + RoomRegions[i, 3]) * 0.5f;
+            float cx    = (RoomRegions[i, 0] + RoomRegions[i, 1]) * 0.5f;
+            float cy    = (RoomRegions[i, 2] + RoomRegions[i, 3]) * 0.5f;
             float roomW = RoomRegions[i, 1] - RoomRegions[i, 0];
             float roomH = RoomRegions[i, 3] - RoomRegions[i, 2];
 
@@ -237,31 +246,30 @@ public class GridManager : MonoBehaviour
                 imgObj.transform.position = new Vector3(startX + cx, startY + cy, 0.05f);
 
                 SpriteRenderer sr = imgObj.AddComponent<SpriteRenderer>();
-                sr.sprite = _roomImages[i];
+                sr.sprite       = _roomImages[i];
+                sr.color        = Color.white;
                 sr.sortingOrder = 1;
 
-                // Scale to fit the room area exactly
                 float spriteW = sr.sprite.bounds.size.x;
                 float spriteH = sr.sprite.bounds.size.y;
                 imgObj.transform.localScale = new Vector3(
-                    (roomW + 3.5f) / spriteW,
-                    (roomH + 3.5f) / spriteH,
+                    (roomW + 3f) / spriteW,
+                    (roomH + 3f) / spriteH,
                     1f
                 );
-                sr.color = Color.white; // fully opaque
             }
 
-            // Room name label on top of image
+            // Room name label
             GameObject go = new($"Label_{card.CardName}");
             go.transform.SetParent(transform);
             go.transform.position = new(startX + cx, startY + cy, -0.05f);
 
             TextMeshPro tmp = go.AddComponent<TextMeshPro>();
-            tmp.text = card.CardName;
-            tmp.fontSize = 2.4f;
-            tmp.fontStyle = FontStyles.Bold;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = new(1f, 1f, 1f, 0.85f);
+            tmp.text             = card.CardName;
+            tmp.fontSize         = 2.4f;
+            tmp.fontStyle        = FontStyles.Bold;
+            tmp.alignment        = TextAlignmentOptions.Center;
+            tmp.color            = new Color(1f, 1f, 1f, 0.85f);
             tmp.textWrappingMode = TextWrappingModes.Normal;
             tmp.rectTransform.sizeDelta = new(5f, 3f);
 
@@ -271,11 +279,11 @@ public class GridManager : MonoBehaviour
     }
 
     // Secret passages between corner rooms
-    // Study(0) <-> Kitchen(8), Conservatory(6) <-> Lounge(2)
     private void AssignSecretPassages()
     {
         if (_roomCards == null || _roomCards.Length < 9) return;
 
+        // Study(0)<->Kitchen(8), Conservatory(6)<->Lounge(2)
         int[,] pairs = { { 0, 8 }, { 8, 0 }, { 6, 2 }, { 2, 6 } };
 
         for (int x = 0; x < GridWidth; x++)
@@ -283,13 +291,27 @@ public class GridManager : MonoBehaviour
             for (int y = 0; y < GridHeight; y++)
             {
                 Tile t = _grid[x, y];
-                if (t?.RoomData == null) continue;
+                if (t == null || t.Type != Tile.TileType.SecretPassage) continue;
 
-                for (int p = 0; p < pairs.GetLength(0); p++)
+                // Find which room region this secret passage tile is inside
+                for (int i = 0; i < 9; i++)
                 {
-                    if (t.RoomData == _roomCards[pairs[p, 0]])
+                    int xMin = RoomRegions[i, 0], xMax = RoomRegions[i, 1];
+                    int yMin = RoomRegions[i, 2], yMax = RoomRegions[i, 3];
+
+                    if (x >= xMin && x <= xMax && y >= yMin && y <= yMax)
                     {
-                        t.SecretPassageDestination = _roomCards[pairs[p, 1]];
+                        t.SetRoomData(_roomCards[i]);
+
+                        for (int p = 0; p < pairs.GetLength(0); p++)
+                        {
+                            if (pairs[p, 0] == i)
+                            {
+                                t.SecretPassageDestination = _roomCards[pairs[p, 1]];
+                                Debug.Log($"[GridManager] Secret passage at ({x},{y}) in {_roomCards[i].CardName} -> {_roomCards[pairs[p, 1]].CardName}");
+                                break;
+                            }
+                        }
                         break;
                     }
                 }
@@ -323,6 +345,9 @@ public class GridManager : MonoBehaviour
         if (invertedY < 0 || invertedY >= lines.Length || x >= lines[invertedY].Length) return Tile.TileType.Invalid;
 
         char c = char.ToUpper(lines[invertedY][x]);
+
+        // Check S before digit so secret passages are not misread as spawns
+        if (c == 'S') return Tile.TileType.SecretPassage;
         if (char.IsDigit(c)) return Tile.TileType.Spawn;
 
         return c switch
@@ -333,7 +358,6 @@ public class GridManager : MonoBehaviour
             'C' or 'F' => Tile.TileType.Cellar,
             'X'        => Tile.TileType.Invalid,
             'H'        => Tile.TileType.Hallway,
-            'S'        => Tile.TileType.SecretPassage,
             _          => Tile.TileType.Invalid
         };
     }
@@ -355,7 +379,7 @@ public class GridManager : MonoBehaviour
                 Tile.TileType.Hallway       => true,
                 Tile.TileType.Spawn         => true,
                 Tile.TileType.Door          => true,
-                Tile.TileType.Room          => current.Type is Tile.TileType.Door or Tile.TileType.Room,
+                Tile.TileType.Room          => current.Type is Tile.TileType.Door or Tile.TileType.Room or Tile.TileType.SecretPassage,
                 Tile.TileType.SecretPassage => true,
                 Tile.TileType.Wall          => false,
                 Tile.TileType.Cellar        => false,

@@ -91,13 +91,21 @@ public class PlayerController : MonoBehaviour
     // secret passage to the linked room triggers a suggestion
     public void UseSecretPassage()
     {
-        if (_currentTile?.SecretPassageDestination == null) return;
+        if (_currentTile?.SecretPassageDestination == null)
+        {
+            Debug.LogWarning($"{Character}: No secret passage destination set.");
+            GameManager.Instance.ChangeState(GameManager.GameState.EndTurn);
+            return;
+        }
+
         Tile dest = GridManager.Instance?.GetRoomTile(_currentTile.SecretPassageDestination);
         if (dest == null)
         {
             Debug.LogWarning($"{Character}: Secret passage dest tile not found.");
+            GameManager.Instance.ChangeState(GameManager.GameState.EndTurn);
             return;
         }
+
         _currentTile = dest;
         transform.position = dest.transform.position;
         Debug.Log($"{Character} used the secret passage to {dest.RoomData?.CardName}.");

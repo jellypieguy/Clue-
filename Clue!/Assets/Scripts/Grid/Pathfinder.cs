@@ -21,17 +21,19 @@ public static class Pathfinder
 
             if (currentDistance >= movementBudget) continue;
 
-            foreach (var neighbor in currentTile.GetWalkableNeighbors())
+            foreach (Tile neighbor in currentTile.GetWalkableNeighbors())
             {
-                if (visited.Add(neighbor))
+                if (!visited.Contains(neighbor))
                 {
+                    visited.Add(neighbor);
                     reachableTiles.Add(neighbor);
 
-                    // doors act as t-nodes you enter your turn is cooked
-                    if (neighbor.Type is not Tile.TileType.Room and not Tile.TileType.Door and not Tile.TileType.SecretPassage)
-                    {
+                    // continue pathfinding through room tiles so player can move freely inside
+                    bool isTerminal = neighbor.Type == Tile.TileType.Door 
+                                      || neighbor.Type == Tile.TileType.SecretPassage;
+
+                    if (!isTerminal)
                         queue.Enqueue(new KeyValuePair<Tile, int>(neighbor, currentDistance + 1));
-                    }
                 }
             }
         }
