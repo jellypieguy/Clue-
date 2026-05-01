@@ -2,6 +2,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Linq;
+
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
@@ -19,6 +21,8 @@ public class GameManager : MonoBehaviour
     }
 
     public GameState CurrentState { get; private set; }
+    public string PendingWinner { get; private set; }
+
     public event Action<GameState> OnGameStateChanged;
 
     [Header("System References (leave empty to auto-find)")]
@@ -28,11 +32,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
     }
 
@@ -40,7 +40,6 @@ public class GameManager : MonoBehaviour
     {
         if (suggestionSystem == null) suggestionSystem = FindFirstObjectByType<SuggestionSystem>();
         if (aiAgent == null) aiAgent = FindFirstObjectByType<AIAgent>();
-
         SetupGame();
     }
 
@@ -49,46 +48,34 @@ public class GameManager : MonoBehaviour
         ChangeState(GameState.Setup);
         NotepadUI.Instance?.ResetNotepad();
 
-        if (DeckManager.Instance == null)
-        {
-            Debug.LogError("[GameManager] DeckManager not found in scene.");
-            return;
-        }
+        if (DeckManager.Instance == null) { Debug.LogError("[GameManager] DeckManager not found."); return; }
         DeckManager.Instance.SetupGameDeck();
 
-        int totalPlayers = 6;
-        int humanCount = 1;
+        int totalPlayers = 6, humanCount = 1;
         if (GameSettings.Instance != null)
         {
             totalPlayers = GameSettings.Instance.TotalPlayers;
-            humanCount = GameSettings.Instance.HumanPlayerCount;
+            humanCount   = GameSettings.Instance.HumanPlayerCount;
         }
 
-        if (TurnManager.Instance == null)
-        {
-            Debug.LogError("[GameManager] TurnManager not found in scene.");
-            return;
-        }
+        if (TurnManager.Instance == null) { Debug.LogError("[GameManager] TurnManager not found."); return; }
         TurnManager.Instance.ApplyPlayerSettings(totalPlayers, humanCount);
 
         DeckManager.Instance.DealCards();
 
-        if (GridManager.Instance != null)
-            GridManager.Instance.ApplyGameSettings();
-
+        GridManager.Instance?.ApplyGameSettings();
         TurnManager.Instance.StartFirstTurn();
-        if (AudioManager.Instance != null) AudioManager.Instance.PlayGameMusic();
+        AudioManager.Instance?.PlayGameMusic();
 
         AutoMarkHumanHand();
-        Debug.Log($"[GameManager] Game setup complete. {humanCount} human(s), {totalPlayers - humanCount} AI.");
+        Debug.Log($"[GameManager] Ready. {humanCount} human(s), {totalPlayers - humanCount} AI.");
     }
 
     private void AutoMarkHumanHand()
     {
         if (NotepadUI.Instance == null) return;
 
-        List<PlayerController> players = TurnManager.Instance.GetPlayers();
-        foreach (PlayerController player in players)
+        foreach (PlayerController player in TurnManager.Instance.GetPlayers())
         {
             if (!player.IsHuman) continue;
 
@@ -97,9 +84,6 @@ public class GameManager : MonoBehaviour
 
             foreach (CardData card in hand.Cards)
                 NotepadUI.Instance.AutoMarkCard(card.CardName);
-
-            Debug.Log($"[HandDisplay] Showing {hand.GetHand().Count} cards");
-            PlayerHandDisplay.Instance?.ShowHand(hand.GetHand());
 
             break;
         }
@@ -110,13 +94,12 @@ public class GameManager : MonoBehaviour
         CurrentState = newState;
         OnGameStateChanged?.Invoke(newState);
 
-        PlayerController current = TurnManager.Instance != null
-            ? TurnManager.Instance.CurrentPlayer
-            : null;
+        var current = TurnManager.Instance?.CurrentPlayer;
 
-        if (newState == GameState.GameOver) 
+        Debug.Log($"[GameManager] → {newState} | {current?.Character.ToString() ?? "none"}");
+
+        if (newState == GameState.GameOver)
         {
-            Debug.Log("[GameManager] Game Over.");
             UIManager.Instance?.ShowMurderReveal(
                 DeckManager.Instance.Murderer.CardName,
                 DeckManager.Instance.MurderWeapon.CardName,
@@ -133,248 +116,237 @@ public class GameManager : MonoBehaviour
                 if (!current.IsHuman && !current.IsEliminated)
                     DiceRoller.Instance.RollDice();
                 break;
-
             case GameState.Moving:
                 if (!current.IsHuman)
-                    HandleAIMove(current);
+                    StartCoroutine(AIMoveRoutine(current));
                 break;
-
             case GameState.Suggesting:
                 if (!current.IsHuman)
-                    HandleAISuggestion(current);
+                    StartCoroutine(AISuggestionRoutine(current));
                 break;
-
             case GameState.Accusing:
                 if (!current.IsHuman)
-                    HandleAIAccusation(current);
-                break;
-
-            case GameState.EndTurn:
+                    StartCoroutine(AIAccusationRoutine(current));
                 break;
         }
     }
 
-    private void HandleAIMove(PlayerController current)
-    {
-        StartCoroutine(AIMoveRoutine(current));
-    }
+    // ── AI Routines ──────────────────────────────────────────────────────────
 
     private IEnumerator AIMoveRoutine(PlayerController current)
     {
+        if (current.IsEliminated) { ChangeState(GameState.EndTurn); yield break; }
+
         yield return new WaitForSeconds(1.5f);
 
-        if (aiAgent == null)
-        {
-            Debug.LogWarning("[GameManager] No AIAgent in scene, ending AI turn.");
-            ChangeState(GameState.EndTurn);
-            yield break;
-        }
+        if (aiAgent == null) { ChangeState(GameState.EndTurn); yield break; }
 
         int roll = DiceRoller.Instance.LastRoll;
-        HashSet<Tile> reachable = Pathfinder.GetReachableTiles(current.CurrentTile, roll);
+        var reachable = Pathfinder.GetReachableTiles(current.CurrentTile, roll);
 
         if (reachable.Count == 0)
         {
-            Debug.Log($"[AI] {current.Character} has no reachable tiles.");
+            Debug.Log($"[AI] {current.Character} is boxed in.");
             ChangeState(GameState.EndTurn);
             yield break;
         }
 
-        // Prefer door/room tiles so AI can make a suggestion
-        List<Tile> roomTiles = new List<Tile>();
-        List<Tile> hallwayTiles = new List<Tile>();
+        // Agent picks a target room based on its memory, then we try to reach it this turn
+        var targetRoom = aiAgent.ChooseTargetRoom(current);
 
-        foreach (Tile t in reachable)
+        var roomTiles    = reachable.Where(t => t.Type == Tile.TileType.Door || t.Type == Tile.TileType.Room).ToList();
+        var hallwayTiles = reachable.Where(t => t.Type != Tile.TileType.Door && t.Type != Tile.TileType.Room).ToList();
+
+        List<Tile> candidates;
+        if (targetRoom != null && roomTiles.Count > 0)
         {
-            if (t.Type == Tile.TileType.Door || t.Type == Tile.TileType.Room)
-                roomTiles.Add(t);
-            else
-                hallwayTiles.Add(t);
+            var preferred = roomTiles.Where(t => t.RoomData == targetRoom).ToList();
+            candidates = preferred.Count > 0 ? preferred : roomTiles;
+        }
+        else
+        {
+            candidates = roomTiles.Count > 0 ? roomTiles : hallwayTiles;
         }
 
-        List<Tile> candidates = roomTiles.Count > 0 ? roomTiles : hallwayTiles;
+        var free = candidates.Where(t => !IsTileOccupied(t)).ToList();
+        if (free.Count == 0) free = candidates;
 
-        // Filter out occupied tiles
-        List<Tile> freeCandidates = candidates.FindAll(t => !IsTileOccupied(t));
-        if (freeCandidates.Count == 0) freeCandidates = candidates;
-
-        Tile chosenTile = freeCandidates[UnityEngine.Random.Range(0, freeCandidates.Count)];
-
-        Debug.Log($"[AI] {current.Character} moving to {chosenTile.name}");
-
+        var chosen = free[UnityEngine.Random.Range(0, free.Count)];
         current.ClearReachableHighlights();
-        yield return StartCoroutine(AIMoveToTile(current, chosenTile));
+        yield return StartCoroutine(AIMoveToTile(current, chosen));
     }
 
-private IEnumerator AIMoveToTile(PlayerController current, Tile targetTile)
-{
-    Vector3 startPos = current.transform.position;
-    Vector3 targetPos = targetTile.transform.position;
-    float elapsed = 0f;
-    float duration = 0.5f;
+    private IEnumerator AIMoveToTile(PlayerController current, Tile target)
+    {
+        Vector3 start = current.transform.position;
+        float elapsed = 0f, duration = 0.5f;
 
-    while (elapsed < duration)
-    {
-        current.transform.position = Vector3.Lerp(startPos, targetPos, elapsed / duration);
-        elapsed += Time.deltaTime;
-        yield return null;
-    }
+        while (elapsed < duration)
+        {
+            current.transform.position = Vector3.Lerp(start, target.transform.position, elapsed / duration);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
 
-    current.transform.position = targetPos;
+        current.transform.position = target.transform.position;
 
-    // Mirror exactly what MoveToTile does in PlayerController
-    if (targetTile.Type == Tile.TileType.Room || targetTile.Type == Tile.TileType.Door)
-    {
-        string roomName = targetTile.RoomData != null ? targetTile.RoomData.CardName : "a room";
-        Debug.Log($"[AI] {current.Character} entered {roomName}.");
-        // Manually update CurrentTile via TeleportToTile since _currentTile is private
-        current.TeleportToTile(targetTile);
-        ChangeState(GameState.Suggesting);
-    }
-    else if (targetTile.Type == Tile.TileType.SecretPassage)
-    {
-        current.TeleportToTile(targetTile);
-        current.UseSecretPassage();
-    }
-    else
-    {
-        current.TeleportToTile(targetTile);
-        Debug.Log($"[AI] {current.Character} stuck in hallway.");
-        ChangeState(GameState.EndTurn);
-    }
-}
-
-    private void HandleAISuggestion(PlayerController current)
-    {
-        StartCoroutine(AISuggestionRoutine(current));
+        // Mirror the state transitions from PlayerController.MoveToTile
+        if (target.Type == Tile.TileType.Room || target.Type == Tile.TileType.Door)
+        {
+            current.TeleportToTile(target);
+            ChangeState(GameState.Suggesting);
+        }
+        else if (target.Type == Tile.TileType.SecretPassage)
+        {
+            current.TeleportToTile(target);
+            current.UseSecretPassage();
+        }
+        else
+        {
+            current.TeleportToTile(target);
+            ChangeState(GameState.EndTurn);
+        }
     }
 
     private IEnumerator AISuggestionRoutine(PlayerController current)
     {
-        yield return new WaitForSeconds(1.0f); // Readability delay
+        if (current.IsEliminated) { ChangeState(GameState.EndTurn); yield break; }
 
-        if (aiAgent == null || suggestionSystem == null)
-        {
-            ChangeState(GameState.EndTurn);
-            yield break;
-        }
+        yield return new WaitForSeconds(1.0f);
+
+        if (aiAgent == null || suggestionSystem == null) { ChangeState(GameState.EndTurn); yield break; }
 
         int playerIndex = TurnManager.Instance.GetPlayers().IndexOf(current);
-        CardData shownCard = aiAgent.MakeSuggestion(current, suggestionSystem,playerIndex,TurnManager.Instance.GetPlayers());
-        
-        if (shownCard != null)
+        bool done = false;
+
+        aiAgent.MakeSuggestion(current, suggestionSystem, playerIndex, TurnManager.Instance.GetPlayers(), shownCard =>
         {
-            aiAgent.RecordShownCard(current, shownCard);
-        }
+            if (shownCard != null) aiAgent.RecordShownCard(current, shownCard);
+            done = true;
+        });
 
-        yield return new WaitForSeconds(1.5f); // Pause so humans can read the suggestion popup
+        yield return new WaitUntil(() => done);
+        yield return new WaitForSeconds(1.5f);
 
-        if (aiAgent.ShouldAccuse(current))
-            ChangeState(GameState.Accusing);
-        else
-            ChangeState(GameState.EndTurn);
-    }
-
-    private void HandleAIAccusation(PlayerController current)
-    {
-        StartCoroutine(AIAccusationRoutine(current));
+        ChangeState(aiAgent.ShouldAccuse(current) ? GameState.Accusing : GameState.EndTurn);
     }
 
     private IEnumerator AIAccusationRoutine(PlayerController current)
     {
+        if (current.IsEliminated) { ChangeState(GameState.EndTurn); yield break; }
+
         yield return new WaitForSeconds(1.0f);
 
-        if (aiAgent == null)
-        {
-            ChangeState(GameState.EndTurn);
-            yield break;
-        }
+        if (aiAgent == null) { ChangeState(GameState.EndTurn); yield break; }
 
-        CardData[] accusation = aiAgent.MakeAccusation(current);
-        bool correct = CheckAccusation(accusation[0], accusation[1], accusation[2]);
-
-        if (correct)
+        var accusation = aiAgent.MakeAccusation(current);
+        if (CheckAccusation(accusation[0], accusation[1], accusation[2]))
         {
-            Debug.Log($"[GameManager] {current.Character} wins! Correct accusation!");
+            PendingWinner = current.Character.ToString();
             ChangeState(GameState.GameOver);
         }
         else
         {
-            Debug.Log($"[GameManager] {current.Character} was wrong. Eliminated.");
+            Debug.Log($"[AI] {current.Character} got it wrong — eliminated.");
             current.Eliminate();
             ChangeState(GameState.EndTurn);
         }
     }
 
+    // ── Human Actions ─────────────────────────────────────────────────────────
+
     public void HumanSuggestion(CardData suspect, CardData weapon)
     {
-        Debug.Log($"[Suggestion] Called. CurrentPlayer={TurnManager.Instance?.CurrentPlayer?.Character}");
-        PlayerController current = TurnManager.Instance.CurrentPlayer;
+        var current = TurnManager.Instance.CurrentPlayer;
         if (current == null) return;
-        Debug.Log($"[Suggestion] Tile={current.CurrentTile?.name}, Type={current.CurrentTile?.Type}, RoomData={current.CurrentTile?.RoomData}");
-        
-        CardData currentRoom = current.CurrentTile?.RoomData;
 
-        if (currentRoom == null)
-        {
-            Debug.Log("[GameManager] You must be in a room to make a suggestion.");
-            return;
-        }
+        var currentRoom = current.CurrentTile?.RoomData;
+        if (currentRoom == null) { Debug.Log("[GameManager] Must be in a room to suggest."); return; }
+
+        // Official rule: drag the named suspect into the room no matter where they are
+        TeleportSuspectToRoom(suspect, currentRoom);
 
         int playerIndex = TurnManager.Instance.GetPlayers().IndexOf(current);
-        CardData shownCard = suggestionSystem.ProcessSuggestion(suspect, weapon, currentRoom,
-            playerIndex, TurnManager.Instance.GetPlayers());
+        var players = TurnManager.Instance.GetPlayers();
 
-        if (shownCard != null)
+        suggestionSystem.ProcessSuggestion(suspect, weapon, currentRoom, playerIndex, players, shownCard =>
         {
-            List<PlayerController> players = TurnManager.Instance.GetPlayers();
+            if (shownCard == null)
+            {
+                UIManager.Instance?.ShowNobodyDisproved();
+                return;
+            }
+
+            // Find who showed it so we can name them in the reveal panel
             for (int i = 1; i < players.Count; i++)
             {
-                int checkIndex = (playerIndex + i) % players.Count;
-                PlayerController checker = players[checkIndex];
-                PlayerHand hand = checker.GetComponent<PlayerHand>();
+                int idx = (playerIndex + i) % players.Count;
+                var hand = players[idx].GetComponent<PlayerHand>();
                 if (hand != null && hand.GetRefutingCards(suspect, weapon, currentRoom).Count > 0)
                 {
-                    UIManager.Instance?.ShowCardReveal(checker.Character.ToString(), shownCard);
+                    UIManager.Instance?.ShowCardReveal(players[idx].Character.ToString(), shownCard);
                     break;
                 }
             }
-        }
+        });
     }
 
     public void HumanAccusation(CardData suspect, CardData weapon, CardData room)
     {
-        PlayerController current = TurnManager.Instance.CurrentPlayer;
+        var current = TurnManager.Instance.CurrentPlayer;
         if (current == null) return;
 
-        bool correct = CheckAccusation(suspect, weapon, room);
-
-        if (correct)
+        if (CheckAccusation(suspect, weapon, room))
         {
-            Debug.Log($"[GameManager] {current.Character} wins! Correct accusation!");
+            PendingWinner = current.Character.ToString();
             ChangeState(GameState.GameOver);
         }
         else
         {
-            Debug.Log($"[GameManager] {current.Character} wrong accusation. Eliminated.");
+            Debug.Log($"[GameManager] {current.Character} wrong — eliminated.");
             current.Eliminate();
             ChangeState(GameState.EndTurn);
         }
     }
 
-    private bool CheckAccusation(CardData suspect, CardData weapon, CardData room)
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private bool CheckAccusation(CardData suspect, CardData weapon, CardData room) =>
+        suspect == DeckManager.Instance.Murderer
+        && weapon == DeckManager.Instance.MurderWeapon
+        && room   == DeckManager.Instance.MurderRoom;
+
+    private void TeleportSuspectToRoom(CardData suspect, CardData room)
     {
-        return suspect == DeckManager.Instance.Murderer
-            && weapon == DeckManager.Instance.MurderWeapon
-            && room == DeckManager.Instance.MurderRoom;
+        var player = FindPlayerForSuspect(suspect);
+        if (player == null) return;
+        var tile = GridManager.Instance?.GetRoomTile(room);
+        if (tile != null) player.TeleportToTile(tile);
     }
+
+    private PlayerController FindPlayerForSuspect(CardData suspect)
+    {
+        // Card names → CharacterType — hardcoded because there's no reverse lookup on the enum
+        var nameMap = new Dictionary<string, PlayerController.CharacterType>
+        {
+            { "Miss Scarlet",    PlayerController.CharacterType.MissScarlet },
+            { "Colonel Mustard", PlayerController.CharacterType.ColMustard  },
+            { "Mrs. White",      PlayerController.CharacterType.MrsWhite    },
+            { "Mr Green",        PlayerController.CharacterType.MrGreen     },
+            { "Mrs. Peacock",    PlayerController.CharacterType.MrsPeacock  },
+            { "Professor Plum",  PlayerController.CharacterType.ProfPlum    },
+        };
+
+        if (!nameMap.TryGetValue(suspect.CardName, out var charType)) return null;
+        return TurnManager.Instance.GetPlayers().FirstOrDefault(p => p.Character == charType);
+    }
+
     private bool IsTileOccupied(Tile tile)
     {
-        foreach (PlayerController player in TurnManager.Instance.GetPlayers())
+        foreach (var player in TurnManager.Instance.GetPlayers())
         {
             if (player == TurnManager.Instance.CurrentPlayer) continue;
-            if (player.CurrentTile == tile && !player.IsEliminated)
-                return true;
+            if (player.CurrentTile == tile && !player.IsEliminated) return true;
         }
         return false;
     }

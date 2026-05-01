@@ -48,27 +48,18 @@ public class NotepadUI : MonoBehaviour
     [SerializeField] private GameObject toastPanel;
     [SerializeField] private TMP_Text toastText;
 
-    private static readonly string[] SuspectsList = {
-        "Miss Scarlet", "Colonel Mustard", "Mrs. White",
-        "Mr Green", "Mrs. Peacock", "Professor Plum"
-    };
-
-    private static readonly string[] WeaponsList = {
-        "Candlestick", "Dagger", "Lead Pipe",
-        "Revolver", "Rope", "Spanner"
-    };
-
-    private static readonly string[] RoomsList = {
-        "Ballroom", "Billiard Room", "Conservatory",
-        "Dining Room", "Hall", "Kitchen",
-        "Library", "Lounge", "Study"
-    };
+    // Fallbacks only — real data comes from DeckManager at runtime.
+    // If card names in the ScriptableObjects ever change, update these too (or just delete them if DeckManager is always present).
+    private static readonly string[] FallbackSuspects = { "Miss Scarlet", "Colonel Mustard", "Mrs. White", "Mr Green", "Mrs. Peacock", "Professor Plum" };
+    private static readonly string[] FallbackWeapons  = { "Candlestick", "Dagger", "Lead Pipe", "Revolver", "Rope", "Spanner" };
+    private static readonly string[] FallbackRooms    = { "Ballroom", "Billiard Room", "Conservatory", "Dining Room", "Hall", "Kitchen", "Library", "Lounge", "Study" };
 
     private const string SaveKey = "CluedoNotepad_v1";
 
     private NotepadSaveData saveState = new();
     private readonly Dictionary<string, NotepadRow> activeRows = new();
     private Coroutine activeToastRoutine;
+    private bool _populated;
 
     private void Awake()
     {
@@ -83,10 +74,7 @@ public class NotepadUI : MonoBehaviour
     private void Start()
     {
         LoadState();
-
-        PopulateSection(suspectsContainer, SuspectsList, saveState.suspects);
-        PopulateSection(weaponsContainer, WeaponsList, saveState.weapons);
-        PopulateSection(roomsContainer, RoomsList, saveState.rooms);
+        if (!_populated) PopulateNotepad();
 
         saveButton?.onClick.AddListener(SaveState);
         clearButton?.onClick.AddListener(ResetBoard);
@@ -94,6 +82,30 @@ public class NotepadUI : MonoBehaviour
 
         toastPanel?.SetActive(false);
         notepadPanel?.SetActive(false);
+    }
+
+    private void PopulateNotepad()
+    {
+        string[] suspects, weapons, rooms;
+
+        if (DeckManager.Instance != null)
+        {
+            var all = DeckManager.Instance.GetAllCardsOrdered();
+            suspects = all.Where(c => c.Type == CardData.CardType.Suspect).Select(c => c.CardName).ToArray();
+            weapons  = all.Where(c => c.Type == CardData.CardType.Weapon).Select(c => c.CardName).ToArray();
+            rooms    = all.Where(c => c.Type == CardData.CardType.Room).Select(c => c.CardName).ToArray();
+        }
+        else
+        {
+            suspects = FallbackSuspects;
+            weapons  = FallbackWeapons;
+            rooms    = FallbackRooms;
+        }
+
+        PopulateSection(suspectsContainer, suspects, saveState.suspects);
+        PopulateSection(weaponsContainer,  weapons,  saveState.weapons);
+        PopulateSection(roomsContainer,    rooms,    saveState.rooms);
+        _populated = true;
     }
 
     public void AutoMarkCard(string cardName)
@@ -188,17 +200,15 @@ public class NotepadUI : MonoBehaviour
         PlayerPrefs.DeleteKey(SaveKey);
         saveState = new NotepadSaveData();
 
-        // clear and rebuild all rows
         foreach (Transform child in suspectsContainer) Destroy(child.gameObject);
-        foreach (Transform child in weaponsContainer) Destroy(child.gameObject);
-        foreach (Transform child in roomsContainer) Destroy(child.gameObject);
+        foreach (Transform child in weaponsContainer)  Destroy(child.gameObject);
+        foreach (Transform child in roomsContainer)    Destroy(child.gameObject);
         activeRows.Clear();
 
-        PopulateSection(suspectsContainer, SuspectsList, saveState.suspects);
-        PopulateSection(weaponsContainer, WeaponsList, saveState.weapons);
-        PopulateSection(roomsContainer, RoomsList, saveState.rooms);
+        _populated = false;
+        PopulateNotepad();
     }
-    
+
     private ClueEntry GetEntryByName(string targetName)
     {
         return saveState.suspects.FirstOrDefault(x => x.name == targetName) ??

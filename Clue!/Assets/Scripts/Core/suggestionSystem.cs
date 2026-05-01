@@ -1,81 +1,57 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Handles a suggestion made by the current player.
-// Goes round the table clockwise, asks each PlayerHand if it can refute the suggestion,
-// and stops at the first player who can show a matching card.
 public class SuggestionSystem : MonoBehaviour
 {
-    // Processes a suggestion by checking each player clockwise from the suggester.
-    // Returns the card shown, or null if nobody could disprove the suggestion.
-    public CardData ProcessSuggestion(CardData suspect, CardData weapon, CardData room,
-                                       int suggestingPlayerIndex, List<PlayerController> allPlayers)
+    // Callback fires with the card shown, or null if nobody could disprove.
+    // Goes clockwise from the suggester — first player with a matching card wins.
+    public void ProcessSuggestion(CardData suspect, CardData weapon, CardData room,
+                                   int suggesterIdx, List<PlayerController> allPlayers,
+                                   System.Action<CardData> onComplete)
     {
-        PlayerController suggester = allPlayers[suggestingPlayerIndex];
-        string suggesterName = GetPlayerName(suggester);
+        var suggester = allPlayers[suggesterIdx];
+        Debug.Log($"{GetName(suggester)} suggests: {suspect.CardName} with {weapon.CardName} in {room.CardName}");
 
-        Debug.Log($"{suggesterName} suggests: {suspect.CardName} with {weapon.CardName} in {room.CardName}");
-
-        int playerCount = allPlayers.Count;
-
-        // Check each player clockwise starting from the player to the left
-        for (int i = 1; i < playerCount; i++)
+        for (int i = 1; i < allPlayers.Count; i++)
         {
-            int checkIndex = (suggestingPlayerIndex + i) % playerCount;
-            PlayerController playerToCheck = allPlayers[checkIndex];
-            string checkName = GetPlayerName(playerToCheck);
+            int idx = (suggesterIdx + i) % allPlayers.Count;
+            var player = allPlayers[idx];
 
-            // Skip eliminated players — they still hold cards but the rules say
-            // they remain in the game only to refute, so they DO get checked
-            // (this is the existing behaviour, eliminated players still show cards)
+            var hand = player.GetComponent<PlayerHand>();
+            if (hand == null) continue;
 
-            PlayerHand hand = playerToCheck.GetComponent<PlayerHand>();
-            if (hand == null)
+            var cards = hand.GetRefutingCards(suspect, weapon, room);
+            if (cards.Count == 0)
             {
-                Debug.LogWarning($"{checkName} has no PlayerHand component.");
+                Debug.Log($"{GetName(player)} has nothing.");
                 continue;
             }
 
-            // Ask the hand which cards (if any) can refute this suggestion
-            List<CardData> refutingCards = hand.GetRefutingCards(suspect, weapon, room);
-
-            if (refutingCards.Count > 0)
+            // Eliminated players still refute per official rules — intentional
+            if (player.IsHuman)
             {
-                // Pick which card to show
-                // AI: random pick from the matching cards
-                // Human: TODO show UI for player to choose, for now picks first
-                CardData shownCard;
-                if (playerToCheck.IsHuman)
+                // Pause here and let UIManager handle the card pick, resume via callback
+                UIManager.Instance?.ShowRefuterPicker(cards, chosen =>
                 {
-                    // TODO: replace with UI choice
-                    shownCard = refutingCards[0];
-                }
-                else
-                {
-                    shownCard = refutingCards[Random.Range(0, refutingCards.Count)];
-                }
+                    Debug.Log($"{GetName(player)} shows {chosen.CardName}");
+                    onComplete(chosen);
+                });
+                return;
+            }
 
-                Debug.Log($"{checkName} shows: {shownCard.CardName} to {suggesterName}");
-                return shownCard;
-            }
-            else
-            {
-                Debug.Log($"{checkName} has nothing to show.");
-            }
+            var shown = cards[Random.Range(0, cards.Count)];
+            Debug.Log($"{GetName(player)} shows {shown.CardName}");
+            onComplete(shown);
+            return;
         }
 
-        // If no player could disprove, the suggestion may be the murder solution
-        Debug.Log("Nobody could disprove the suggestion!");
-        return null;
+        Debug.Log("Nobody could disprove it — that's suspicious.");
+        onComplete(null);
     }
 
-    // Helper to safely get a display name for a player.
-    // Looks for the Player component first; falls back to the CharacterType enum.
-    private string GetPlayerName(PlayerController pc)
+    private string GetName(PlayerController pc)
     {
-        Player playerData = pc.GetComponent<Player>();
-        if (playerData != null && !string.IsNullOrEmpty(playerData.PlayerName))
-            return playerData.PlayerName;
-        return pc.Character.ToString();
+        var data = pc.GetComponent<Player>();
+        return (data != null && !string.IsNullOrEmpty(data.PlayerName)) ? data.PlayerName : pc.Character.ToString();
     }
 }

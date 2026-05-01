@@ -105,6 +105,7 @@ public class DeckManager : MonoBehaviour
             playerIndex = (playerIndex + 1) % players.Count;
         }
 
+        AudioManager.Instance?.PlayCardDeal();
         Debug.Log("DeckManager: All cards dealt.");
     }
 

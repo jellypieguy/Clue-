@@ -22,6 +22,14 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Sprite cellarSprite;
     [SerializeField] private Sprite spawnSprite;
 
+    [Header("Board Border & Background")]
+    [SerializeField] private Sprite boardBorderSprite;
+    [Tooltip("How many tiles thick the border frame is on each side (0.5 = half a tile)")]
+    [SerializeField] private float borderThickness = 0.5f;
+    [SerializeField] private Sprite sceneBackgroundSprite;
+    [Tooltip("How many tiles wide/tall the scene background covers (should be larger than the board)")]
+    [SerializeField] private float backgroundSize = 40f;
+
     [Header("Room Card Data")]
     [Tooltip("0=Conservatory 1=Ballroom 2=Kitchen 3=DiningRoom 4=BilliardRoom 5=Library 6=Lounge 7=Hall 8=Study")]
     [SerializeField] private CardData[] roomCards = new CardData[9];
@@ -96,8 +104,23 @@ public class GridManager : MonoBehaviour
             if (sr != null) tileSprite = sr.sprite;
         }
 
-        CreateBackgroundLayer("BoardBackground", tileSprite, new Color(0.05f, 0.05f, 0.05f), 0.5f, GridWidth + 1f, GridHeight + 1f);
-        CreateBackgroundLayer("BlackBorders", tileSprite, Color.black, 0.25f, GridWidth, GridHeight);
+        // Layer 1 (furthest back): scene background fills the whole camera view
+        if (sceneBackgroundSprite != null)
+            CreateBackgroundLayer("SceneBackground", sceneBackgroundSprite, Color.white, 1f, backgroundSize, backgroundSize, -2002);
+        else
+            CreateBackgroundLayer("SceneBackground", tileSprite, new Color(0.12f, 0.08f, 0.05f), 1f, backgroundSize, backgroundSize, -2002);
+
+        // Layer 2: border frame — sized to the exact board, plus borderThickness on each side
+        // boardBackground (layer 3) is GridWidth+1 wide, so border needs GridWidth+1 + borderThickness*2 to show borderThickness tiles on each edge
+        float borderW = GridWidth  + 1f + borderThickness * 2;
+        float borderH = GridHeight + 1f + borderThickness * 2;
+        if (boardBorderSprite != null)
+            CreateBackgroundLayer("BoardBorder", boardBorderSprite, Color.white, 0.6f, borderW, borderH, -2001);
+        else
+            CreateBackgroundLayer("BoardBorder", tileSprite, Color.black, 0.6f, borderW, borderH, -2001);
+
+        // Layer 3: dark board surface behind the tiles
+        CreateBackgroundLayer("BoardBackground", tileSprite, new Color(0.05f, 0.05f, 0.05f), 0.5f, GridWidth + 1f, GridHeight + 1f, -2000);
 
         for (int x = 0; x < GridWidth; x++)
         {
@@ -155,7 +178,7 @@ public class GridManager : MonoBehaviour
         ApplyGameSettings();
     }
 
-    private void CreateBackgroundLayer(string layerName, Sprite sprite, Color color, float zOffset, float scaleX, float scaleY)
+    private void CreateBackgroundLayer(string layerName, Sprite sprite, Color color, float zOffset, float scaleX, float scaleY, int sortingOrder = -2000)
     {
         var bg = new GameObject(layerName);
         bg.transform.SetParent(transform);
@@ -165,9 +188,17 @@ public class GridManager : MonoBehaviour
         sr.sprite = sprite;
         sr.color = color;
         sr.drawMode = SpriteDrawMode.Simple;
-        sr.sortingOrder = -2000; // <--- THE FIX: Background is now firmly behind everything.
+        sr.sortingOrder = sortingOrder;
 
-        bg.transform.localScale = new Vector3(scaleX * tileSize, scaleY * tileSize, 1);
+        // Target world-space size
+        float targetW = scaleX * tileSize;
+        float targetH = scaleY * tileSize;
+
+        // Normalize by sprite's natural world size so any PPU/resolution works correctly
+        if (sprite != null && sprite.bounds.size.x > 0 && sprite.bounds.size.y > 0)
+            bg.transform.localScale = new Vector3(targetW / sprite.bounds.size.x, targetH / sprite.bounds.size.y, 1);
+        else
+            bg.transform.localScale = new Vector3(targetW, targetH, 1);
     }
 
     private void AssignRoomData()
