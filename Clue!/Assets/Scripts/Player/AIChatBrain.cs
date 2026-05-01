@@ -36,8 +36,7 @@ public class AIChatBrain : MonoBehaviour
             string chosenLine = possibleLines[Random.Range(0, possibleLines.Length)];
             Color charColor = GetCharacterColor(character);
 
-            // Send it to the chat UI
-            ChatManager.Instance.AddMessageToChat(character.ToString(), chosenLine, charColor);
+            ClueChatManager.Instance.AddMessageToChat(character.ToString(), chosenLine, charColor);
         }
     }
 
@@ -101,7 +100,7 @@ public class AIChatBrain : MonoBehaviour
             };
         }
 
-        // --- REVEREND GREEN (Nervous, Polite, Clumsy) ---
+        // Reverend Green
         if (character == Character.Green)
         {
             if (situation == "TurnStart") return new[] {
