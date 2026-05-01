@@ -55,7 +55,7 @@ public class Tile : MonoBehaviour
                     break;
                 case TileType.Room:
                 case TileType.Invalid:
-                    spriteRenderer.color = new Color(0f, 0f, 0f, 0f);
+                    spriteRenderer.color = new Color(0f, 0f, 0f, 0f); // transparent
                     break;
                 default:
                     spriteRenderer.color = Color.white;
@@ -71,7 +71,8 @@ public class Tile : MonoBehaviour
             textMesh.GetComponent<MeshRenderer>().sortingOrder = 10;
             textMesh.fontSize = 6f;
             textMesh.color = new Color(0, 0, 0, 0.8f);
-
+    
+            // hide text on room and invalid tiles — room images cover them
             if (Type == TileType.Room || Type == TileType.Invalid || mapChar == ' ')
             {
                 textMesh.enabled = false;
