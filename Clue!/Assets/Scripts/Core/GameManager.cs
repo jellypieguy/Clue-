@@ -47,6 +47,7 @@ public class GameManager : MonoBehaviour
     private void SetupGame()
     {
         ChangeState(GameState.Setup);
+        NotepadUI.Instance?.ResetNotepad();
 
         if (DeckManager.Instance == null)
         {
@@ -84,7 +85,7 @@ public class GameManager : MonoBehaviour
 
     private void AutoMarkHumanHand()
     {
-        if (DetectiveNotepad.Instance == null) return;
+        if (NotepadUI.Instance == null) return;
 
         List<PlayerController> players = TurnManager.Instance.GetPlayers();
         foreach (PlayerController player in players)
@@ -95,7 +96,7 @@ public class GameManager : MonoBehaviour
             if (hand == null) continue;
 
             foreach (CardData card in hand.Cards)
-                DetectiveNotepad.Instance.AutoMarkCard(card.CardName);
+                NotepadUI.Instance.AutoMarkCard(card.CardName);
 
             Debug.Log($"[HandDisplay] Showing {hand.GetHand().Count} cards");
             PlayerHandDisplay.Instance?.ShowHand(hand.GetHand());
@@ -113,11 +114,14 @@ public class GameManager : MonoBehaviour
             ? TurnManager.Instance.CurrentPlayer
             : null;
 
-        Debug.Log($"[GameManager] State -> {newState} | Player: {(current != null ? current.Character.ToString() : "none")}");
-
-        if (newState == GameState.Setup || newState == GameState.GameOver)
+        if (newState == GameState.GameOver) 
         {
-            if (newState == GameState.GameOver) Debug.Log("[GameManager] Game Over.");
+            Debug.Log("[GameManager] Game Over.");
+            UIManager.Instance?.ShowMurderReveal(
+                DeckManager.Instance.Murderer.CardName,
+                DeckManager.Instance.MurderWeapon.CardName,
+                DeckManager.Instance.MurderRoom.CardName
+            );
             return;
         }
 

@@ -354,8 +354,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -372,8 +372,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 11
-  m_fontSizeBase: 11
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -450,7 +450,7 @@ GameObject:
   - component: {fileID: 8854077626358515877}
   - component: {fileID: 4596567352245074357}
   - component: {fileID: 4766738677284479763}
-  - component: {fileID: 3585672689664372172}
+  - component: {fileID: 6107780584197555628}
   m_Layer: 5
   m_Name: RowPrefab
   m_TagString: Untagged
@@ -565,7 +565,7 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
---- !u!114 &3585672689664372172
+--- !u!114 &6107780584197555628
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -574,9 +574,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 4331334298448713452}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 255776d35f3a9af4eabe48c8218bf38e, type: 3}
+  m_Script: {fileID: 11500000, guid: ccb598afd9fa0c3429181db3d61a58c5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CluedoRow
+  m_EditorClassIdentifier: Assembly-CSharp::NotepadRow
   labelText: {fileID: 1685675198012341407}
   noButton: {fileID: 8239001578715683621}
   maybeButton: {fileID: 907951734467801866}

@@ -41,6 +41,13 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Image cardRevealImage;
     [SerializeField] private Button cardRevealOKButton;
 
+    [Header("Murder Reveal Panel")]
+    [SerializeField] private GameObject murderRevealPanel;
+    [SerializeField] private TextMeshProUGUI murdererText;
+    [SerializeField] private TextMeshProUGUI weaponText;
+    [SerializeField] private TextMeshProUGUI roomText;
+    [SerializeField] private Button murderRevealContinueButton;
+
     [Header("Game Over Panel")]
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private TextMeshProUGUI gameOverText;
@@ -95,14 +102,13 @@ public class UIManager : MonoBehaviour
         TogglePanel(suggestionPanel, false);
         TogglePanel(accusationPanel, false);
         TogglePanel(cardRevealPanel, false);
+        TogglePanel(murderRevealPanel, false);
         TogglePanel(gameOverPanel, false);
         TogglePanel(pausePanel, false);
         TogglePanel(passDevicePanel, false);
 
         if (TurnManager.Instance != null && TurnManager.Instance.CurrentPlayer != null)
-        {
             HandleTurnChanged(TurnManager.Instance.CurrentPlayer);
-        }
 
         var startingState = GameManager.Instance != null ? GameManager.Instance.CurrentState : GameManager.GameState.Setup;
         RefreshButtonStates(startingState);
@@ -111,9 +117,7 @@ public class UIManager : MonoBehaviour
     private void Update()
     {
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
             TogglePauseMenu();
-        }
     }
 
     private void BindUIEvents()
@@ -127,12 +131,11 @@ public class UIManager : MonoBehaviour
         if (confirmAccusationButton != null) confirmAccusationButton.onClick.AddListener(OnConfirmAccusation);
         if (cancelAccusationButton != null) cancelAccusationButton.onClick.AddListener(() => TogglePanel(accusationPanel, false));
         if (cardRevealOKButton != null) cardRevealOKButton.onClick.AddListener(OnCardRevealDismissed);
+        if (murderRevealContinueButton != null) murderRevealContinueButton.onClick.AddListener(OnMurderRevealContinue);
         if (replayButton != null) replayButton.onClick.AddListener(OnReplayClicked);
-
         if (resumeButton != null) resumeButton.onClick.AddListener(TogglePauseMenu);
         if (volumeSlider != null) volumeSlider.onValueChanged.AddListener(val => { if (AudioManager.Instance != null) AudioManager.Instance.SetMusicVolume(val); });
         if (muteToggle != null) muteToggle.onValueChanged.AddListener(isMuted => { if (AudioManager.Instance != null) AudioManager.Instance.ToggleMusic(!isMuted); });
-
         if (passDeviceContinueButton != null) passDeviceContinueButton.onClick.AddListener(OnPassDeviceContinue);
     }
 
@@ -151,10 +154,19 @@ public class UIManager : MonoBehaviour
         if (cardRevealImage != null && revealedCard.CardImage != null)
             cardRevealImage.sprite = revealedCard.CardImage;
 
-        if (DetectiveNotepad.Instance != null)
-            DetectiveNotepad.Instance.AutoMarkCard(revealedCard.CardName);
+        if (NotepadUI.Instance != null)
+            NotepadUI.Instance.AutoMarkCard(revealedCard.CardName);
 
         TogglePanel(cardRevealPanel, true);
+    }
+
+    public void ShowMurderReveal(string murderer, string weapon, string room)
+    {
+        if (murdererText != null) murdererText.text = $"Murderer: {murderer}";
+        if (weaponText != null) weaponText.text = $"Weapon: {weapon}";
+        if (roomText != null) roomText.text = $"Room: {room}";
+
+        TogglePanel(murderRevealPanel, true);
     }
 
     public void ShowGameOver(string winnerName)
@@ -174,10 +186,8 @@ public class UIManager : MonoBehaviour
 
         if (state == GameManager.GameState.PassingDevice)
         {
-            if (passDeviceText != null && TurnManager.Instance != null && TurnManager.Instance.CurrentPlayer != null)
-            {
+            if (passDeviceText != null && TurnManager.Instance?.CurrentPlayer != null)
                 passDeviceText.text = $"{TurnManager.Instance.CurrentPlayer.Character}'s Turn!\nPass the device.";
-            }
 
             TogglePanel(passDevicePanel, true);
             if (handContainer != null) handContainer.gameObject.SetActive(false);
@@ -186,14 +196,12 @@ public class UIManager : MonoBehaviour
         {
             TogglePanel(passDevicePanel, false);
 
-            var currentPlayer = TurnManager.Instance != null ? TurnManager.Instance.CurrentPlayer : null;
+            var currentPlayer = TurnManager.Instance?.CurrentPlayer;
             if (currentPlayer != null && currentPlayer.IsHuman)
-            {
                 UpdateHandDisplay(currentPlayer);
-            }
         }
 
-        if (state == GameManager.GameState.GameOver) ShowGameOver(null);
+        // GameOver is now handled via ShowMurderReveal -> OnMurderRevealContinue -> ShowGameOver
     }
 
     private void HandleTurnChanged(PlayerController activePlayer)
@@ -240,13 +248,11 @@ public class UIManager : MonoBehaviour
         PopulateDropdown(suspectDropdown, DeckManager.Instance.AllSuspects);
         PopulateDropdown(weaponDropdown, DeckManager.Instance.AllWeapons);
 
-        var activePlayer = TurnManager.Instance != null ? TurnManager.Instance.CurrentPlayer : null;
-        var currentRoom = activePlayer != null && activePlayer.CurrentTile != null ? activePlayer.CurrentTile.RoomData : null;
+        var activePlayer = TurnManager.Instance?.CurrentPlayer;
+        var currentRoom = activePlayer?.CurrentTile?.RoomData;
 
         if (roomLabel != null)
-        {
             roomLabel.text = currentRoom != null ? $"in {currentRoom.CardName}" : "in [no room]";
-        }
 
         TogglePanel(suggestionPanel, true);
     }
@@ -291,6 +297,12 @@ public class UIManager : MonoBehaviour
         if (GameManager.Instance != null) GameManager.Instance.ChangeState(GameManager.GameState.EndTurn);
     }
 
+    private void OnMurderRevealContinue()
+    {
+        TogglePanel(murderRevealPanel, false);
+        ShowGameOver(null);
+    }
+
     private void OnReplayClicked()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
@@ -319,9 +331,7 @@ public class UIManager : MonoBehaviour
         if (handContainer == null || cardPrefab == null) return;
 
         foreach (Transform child in handContainer)
-        {
             Destroy(child.gameObject);
-        }
 
         bool isPassingDevice = GameManager.Instance != null && GameManager.Instance.CurrentState == GameManager.GameState.PassingDevice;
 
@@ -339,9 +349,7 @@ public class UIManager : MonoBehaviour
                 var cardObj = Instantiate(cardPrefab, handContainer);
 
                 if (cardObj.TryGetComponent<TextMeshProUGUI>(out var labelText))
-                {
                     labelText.text = card.CardName;
-                }
                 else
                 {
                     var childText = cardObj.GetComponentInChildren<TextMeshProUGUI>();
@@ -349,9 +357,7 @@ public class UIManager : MonoBehaviour
                 }
 
                 if (cardObj.TryGetComponent<Image>(out var img) && card.CardImage != null)
-                {
                     img.sprite = card.CardImage;
-                }
             }
         }
         else

@@ -1,30 +1,63 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 public class NotepadRow : MonoBehaviour
 {
-    public TMP_Text cardNameText;
-    public Toggle haveToggle;
-    public Toggle shownToggle;
-    public Toggle xToggle;
+    [Header("Row references")]
+    public TMP_Text labelText;
+    public Button noButton;
+    public Button maybeButton;
+    public Button yesButton;
 
-    private int boundCardIndex;
-    private Player boundPlayer;
+    static readonly Color ColNo = new Color(0.89f, 0.29f, 0.29f, 1f);
+    static readonly Color ColMaybe = new Color(0.22f, 0.54f, 0.87f, 1f);
+    static readonly Color ColYes = new Color(0.39f, 0.60f, 0.13f, 1f);
+    static readonly Color ColInactive = new Color(0.82f, 0.82f, 0.82f, 1f);
 
-    public void Setup(int index, string cardName, Player player)
+    ClueEntry entry;
+    Action onChange;
+
+    public void Initialize(ClueEntry e, Action onChanged)
     {
-        boundCardIndex = index;
-        boundPlayer = player;
-        cardNameText.text = cardName;
+        entry = e;
+        onChange = onChanged;
+        labelText.text = e.name;
+        noButton.onClick.AddListener(() => Toggle(ClueState.No));
+        maybeButton.onClick.AddListener(() => Toggle(ClueState.Maybe));
+        yesButton.onClick.AddListener(() => Toggle(ClueState.Yes));
+        RefreshUI();
+    }
 
-        // gets initial state from the players notes so the UI doesnt give fake info 
-        haveToggle.isOn = boundPlayer.ReadNote(boundCardIndex, 0);
-        shownToggle.isOn = boundPlayer.ReadNote(boundCardIndex, 1);
-        xToggle.isOn = boundPlayer.ReadNote(boundCardIndex, 2);
+    public void Init(ClueEntry e, Action onChanged) => Initialize(e, onChanged);
 
-        haveToggle.onValueChanged.AddListener(_ => boundPlayer.MarkNote(boundCardIndex, 0));
-        shownToggle.onValueChanged.AddListener(_ => boundPlayer.MarkNote(boundCardIndex, 1));
-        xToggle.onValueChanged.AddListener(_ => boundPlayer.MarkNote(boundCardIndex, 2));
+    void Toggle(ClueState clicked)
+    {
+        entry.state = (entry.state == clicked) ? ClueState.None : clicked;
+        RefreshUI();
+        onChange?.Invoke();
+    }
+
+    public void RefreshUI()
+    {
+        SetColor(noButton, entry.state == ClueState.No ? ColNo : ColInactive);
+        SetColor(maybeButton, entry.state == ClueState.Maybe ? ColMaybe : ColInactive);
+        SetColor(yesButton, entry.state == ClueState.Yes ? ColYes : ColInactive);
+
+        noButton.interactable = true;
+        maybeButton.interactable = true;
+        yesButton.interactable = true;
+    }
+
+    public void Refresh() => RefreshUI();
+
+    void SetColor(Button btn, Color c)
+    {
+        var cb = btn.colors;
+        cb.normalColor = c;
+        cb.highlightedColor = c * 1.1f;
+        cb.selectedColor = c;
+        btn.colors = cb;
     }
 }
