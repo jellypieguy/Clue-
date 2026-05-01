@@ -29,15 +29,15 @@ public class GridManager : MonoBehaviour
     //  boxes for rooms nocollide
     private static readonly int[,] RoomRegions = new int[9, 4]
     {
-        {  0,    5,    0,    4 },  // 0: Conservatory (Bottom Left - Fit was already perfect)
-        {  8,    15,   -1,    5 },  // 1: Ballroom (Expanded outward to fill the massive black gaps)
-        {  18,   23,   0,    6 },  // 2: Kitchen (Expanded to touch the hallway)
-        {  16,   23,   8,    14 }, // 3: Dining Room (Expanded left to touch the hallway)
-        {  0,    5,    7,    11 }, // 4: Billiard Room (Adjusted height to fill void)
-        {  0,    6,    13,   17 }, // 5: Library (Expanded right to touch the hallway)
-        {  17,   23,   18,   23 }, // 6: Lounge (Moved down exactly 1 tile)
-        {  9,    14,   15,   24 }, // 7: Hall (Moved down exactly 1 tile)
-        {  0,    6,    20,   23 }, // 8: Study (Moved down exactly 1 tile)
+        {  0,    5,    0,    4 },  // 0: Conservatory its like playing jenga tryna map this shit out
+        {  8,    15,   -1,    5 },  // 1: Ballroom
+        {  18,   23,   0,    6 },  // 2: Kitchen 
+        {  16,   23,   8,    14 }, // 3: Dining Room 
+        {  0,    5,    7,    11 }, // 4: Billiard Room 
+        {  0,    6,    13,   17 }, // 5: Library 
+        {  17,   23,   18,   23 }, // 6: Lounge 
+        {  9,    14,   15,   24 }, // 7: Hall
+        {  0,    6,    20,   23 }, // 8: Study 
     };
 
     private Tile[,] grid;
