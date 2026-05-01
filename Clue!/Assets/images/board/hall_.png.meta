@@ -103,10 +103,10 @@ TextureImporter:
       name: hall__0
       rect:
         serializedVersion: 2
-        x: 123
-        y: 96
-        width: 343
-        height: 401
+        x: 0
+        y: 0
+        width: 334
+        height: 393
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
