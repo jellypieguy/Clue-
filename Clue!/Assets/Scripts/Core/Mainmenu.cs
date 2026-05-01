@@ -14,6 +14,11 @@ public class MainMenu : MonoBehaviour
     private void Start()
     {
         AudioManager.Instance?.PlayMenuMusic();
+        if (GameSettings.Instance != null)
+        {
+            GameSettings.Instance.SetHumanCount(1);
+            GameSettings.Instance.SetTotalPlayers(6);
+        }
         ShowMainMenu();
     }
 

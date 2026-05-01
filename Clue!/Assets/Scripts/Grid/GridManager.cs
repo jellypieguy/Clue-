@@ -33,6 +33,8 @@ public class GridManager : MonoBehaviour
     [Header("Room Card Data")]
     [Tooltip("0=Conservatory 1=Ballroom 2=Kitchen 3=DiningRoom 4=BilliardRoom 5=Library 6=Lounge 7=Hall 8=Study")]
     [SerializeField] private CardData[] roomCards = new CardData[9];
+    [Header("Envelope")]
+    [SerializeField] private Sprite envelopeSprite;
 
     //  boxes for rooms nocollide
     private static readonly int[,] RoomRegions = new int[9, 4]
@@ -176,6 +178,7 @@ public class GridManager : MonoBehaviour
         AddRoomLabels();
         AddRoomImages();
         ApplyGameSettings();
+        AddEnvelopeImage();
     }
 
     private void CreateBackgroundLayer(string layerName, Sprite sprite, Color color, float zOffset, float scaleX, float scaleY, int sortingOrder = -2000)
@@ -433,7 +436,27 @@ public class GridManager : MonoBehaviour
 
         return neighbors;
     }
+    private void AddEnvelopeImage()
+    {
+        if (envelopeSprite == null) return;
 
+        float startX = (-GridWidth / 2f + 0.5f) * tileSize;
+        float startY = (-GridHeight / 2f + 0.5f) * tileSize;
+
+        float cx = 11.5f;
+        float cy = 10.1f;
+
+        var go = new GameObject("EnvelopeGraphic");
+        go.transform.SetParent(transform);
+        go.transform.position = new Vector3(startX + cx * tileSize, startY + cy * tileSize, 0.1f);
+        go.transform.rotation = Quaternion.Euler(0, 0, 90f);
+
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = envelopeSprite;
+        sr.sortingOrder = 5;
+
+        go.transform.localScale = new Vector3(0.8f, 0.8f, 1f);
+    }
     private bool IsValid(int x, int y) => x >= 0 && x < GridWidth && y >= 0 && y < GridHeight && grid[x, y] != null;
 
     public void ApplyGameSettings()
