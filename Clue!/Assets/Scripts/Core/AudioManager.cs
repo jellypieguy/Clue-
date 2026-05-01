@@ -35,9 +35,15 @@ public class AudioManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        InitialiseAudio();
+    }
 
-        musicSource ??= gameObject.AddComponent<AudioSource>();
-        sfxSource ??= gameObject.AddComponent<AudioSource>();
+    private void InitialiseAudio()
+    {
+        if (musicSource == null)
+            musicSource = gameObject.AddComponent<AudioSource>();
+        if (sfxSource == null)
+            sfxSource = gameObject.AddComponent<AudioSource>();
 
         musicSource.loop = true;
         musicSource.playOnAwake = false;
@@ -55,7 +61,8 @@ public class AudioManager : MonoBehaviour
 
     private void SwitchMusic(AudioClip newClip)
     {
-        if (newClip == null || musicSource.clip == newClip) return;
+        if (newClip == null || musicSource == null) return;
+        if (musicSource.clip == newClip) return;
 
         musicSource.Stop();
         musicSource.clip = newClip;
