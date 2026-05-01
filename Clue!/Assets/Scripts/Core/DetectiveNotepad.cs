@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -10,177 +11,204 @@ public enum ClueState { None, No, Maybe, Yes }
 [Serializable]
 public class ClueEntry
 {
-    public string    name;
+    public string name;
     public ClueState state;
-    public bool      isInHand;
+    public bool isConfirmedInHand;
 
-    public ClueEntry(string n) { name = n; state = ClueState.None; isInHand = false; }
+    public ClueEntry(string name)
+    {
+        this.name = name;
+        state = ClueState.None;
+        isConfirmedInHand = false;
+    }
 }
 
 [Serializable]
 public class NotepadSaveData
 {
     public List<ClueEntry> suspects = new();
-    public List<ClueEntry> weapons  = new();
-    public List<ClueEntry> rooms    = new();
+    public List<ClueEntry> weapons = new();
+    public List<ClueEntry> rooms = new();
 }
 
 public class DetectiveNotepad : MonoBehaviour
 {
     public static DetectiveNotepad Instance { get; private set; }
 
-    [Header("Section container parents (Vertical Layout Groups)")]
     [SerializeField] private Transform suspectsContainer;
     [SerializeField] private Transform weaponsContainer;
     [SerializeField] private Transform roomsContainer;
-
-    [Header("Row prefab")]
     [SerializeField] private GameObject rowPrefab;
 
-    [Header("Buttons")]
     [SerializeField] private Button saveButton;
     [SerializeField] private Button clearButton;
     [SerializeField] private Button togglePanelButton;
-
-    [Header("Panel root (toggled open/closed)")]
     [SerializeField] private GameObject notepadPanel;
 
-    [Header("Toast")]
     [SerializeField] private GameObject toastPanel;
-    [SerializeField] private TMP_Text   toastText;
+    [SerializeField] private TMP_Text toastText;
 
-    static readonly string[] Suspects = {
+    private static readonly string[] SuspectsList = {
         "Miss Scarlet", "Colonel Mustard", "Mrs. White",
         "Mr Green", "Mrs. Peacock", "Professor Plum"
     };
-    static readonly string[] Weapons = {
+
+    private static readonly string[] WeaponsList = {
         "Candlestick", "Dagger", "Lead Pipe",
         "Revolver", "Rope", "Spanner"
     };
-    static readonly string[] Rooms = {
+
+    private static readonly string[] RoomsList = {
         "Ballroom", "Billiard Room", "Conservatory",
         "Dining Room", "Hall", "Kitchen",
         "Library", "Lounge", "Study"
     };
 
-    const string SAVE_KEY = "CluedoNotepad_v1";
+    private const string SaveKey = "CluedoNotepad_v1";
 
-    NotepadSaveData data = new();
-    readonly Dictionary<string, CluedoRow> rowLookup = new();
+    private NotepadSaveData saveState = new();
+    private readonly Dictionary<string, CluedoRow> activeRows = new();
+    private Coroutine activeToastRoutine;
 
-    void Awake()
+    private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
     }
 
-    void Start()
+    private void Start()
     {
-        Load();
+        LoadState();
 
-        BuildSection(suspectsContainer, Suspects, data.suspects);
-        BuildSection(weaponsContainer,  Weapons,  data.weapons);
-        BuildSection(roomsContainer,    Rooms,    data.rooms);
+        PopulateSection(suspectsContainer, SuspectsList, saveState.suspects);
+        PopulateSection(weaponsContainer, WeaponsList, saveState.weapons);
+        PopulateSection(roomsContainer, RoomsList, saveState.rooms);
 
-        saveButton?.onClick.AddListener(Save);
-        clearButton?.onClick.AddListener(ClearAll);
-        togglePanelButton?.onClick.AddListener(TogglePanel);
+        saveButton?.onClick.AddListener(SaveState);
+        clearButton?.onClick.AddListener(ResetBoard);
+        togglePanelButton?.onClick.AddListener(ToggleVisibility);
 
-        if (toastPanel) toastPanel.SetActive(false);
-        if (notepadPanel) notepadPanel.SetActive(false);
+        toastPanel?.SetActive(false);
+        notepadPanel?.SetActive(false);
     }
 
-    // Called by GameManager.AutoMarkHumanHand()
     public void AutoMarkCard(string cardName)
     {
-        ClueEntry entry = FindEntry(cardName);
+        var entry = GetEntryByName(cardName);
         if (entry == null)
         {
-            Debug.LogWarning($"[DetectiveNotepad] Card not found: {cardName}");
+            Debug.LogWarning($"[DetectiveNotepad] Missing card definition: {cardName}");
             return;
         }
 
-        entry.state    = ClueState.Yes;
-        entry.isInHand = true;
+        entry.state = ClueState.Yes;
+        entry.isConfirmedInHand = true;
 
-        if (rowLookup.TryGetValue(cardName, out CluedoRow row))
-            row.Refresh();
-    }
-
-    void BuildSection(Transform container, string[] names, List<ClueEntry> entries)
-    {
-        foreach (string n in names)
-            if (!entries.Exists(e => e.name == n))
-                entries.Add(new ClueEntry(n));
-
-        foreach (ClueEntry entry in entries)
+        if (activeRows.TryGetValue(cardName, out var rowInstance))
         {
-            GameObject go  = Instantiate(rowPrefab, container);
-            CluedoRow  row = go.GetComponent<CluedoRow>();
-            row.Init(entry, OnRowChanged);
-            rowLookup[entry.name] = row;
+            rowInstance.Refresh();
         }
     }
 
-    void Save()
+    private void PopulateSection(Transform container, string[] defaultNames, List<ClueEntry> stateList)
     {
-        PlayerPrefs.SetString(SAVE_KEY, JsonUtility.ToJson(data, true));
+        foreach (var itemName in defaultNames)
+        {
+            if (!stateList.Exists(entry => entry.name == itemName))
+            {
+                stateList.Add(new ClueEntry(itemName));
+            }
+        }
+
+        foreach (var entry in stateList)
+        {
+            var rowObj = Instantiate(rowPrefab, container);
+            var rowComponent = rowObj.GetComponent<CluedoRow>();
+
+            rowComponent.Init(entry, OnRowInteracted);
+            activeRows[entry.name] = rowComponent;
+        }
+    }
+
+    private void SaveState()
+    {
+        PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(saveState, true));
         PlayerPrefs.Save();
         ShowToast("Saved!");
     }
 
-    void Load()
+    private void LoadState()
     {
-        if (!PlayerPrefs.HasKey(SAVE_KEY)) return;
+        if (!PlayerPrefs.HasKey(SaveKey)) return;
+
         try
         {
-            data = JsonUtility.FromJson<NotepadSaveData>(PlayerPrefs.GetString(SAVE_KEY));
-            // Reset isInHand flags — re-applied by AutoMarkHumanHand each run
-            foreach (var e in data.suspects) e.isInHand = false;
-            foreach (var e in data.weapons)  e.isInHand = false;
-            foreach (var e in data.rooms)    e.isInHand = false;
+            saveState = JsonUtility.FromJson<NotepadSaveData>(PlayerPrefs.GetString(SaveKey));
+
+            // Re-lock hands correctly each session
+            foreach (var e in saveState.suspects) e.isConfirmedInHand = false;
+            foreach (var e in saveState.weapons) e.isConfirmedInHand = false;
+            foreach (var e in saveState.rooms) e.isConfirmedInHand = false;
         }
-        catch { data = new NotepadSaveData(); }
+        catch
+        {
+            saveState = new NotepadSaveData();
+        }
     }
 
-    void ClearAll()
+    private void ResetBoard()
     {
-        foreach (var e in data.suspects) e.state = ClueState.None;
-        foreach (var e in data.weapons)  e.state = ClueState.None;
-        foreach (var e in data.rooms)    e.state = ClueState.None;
+        Action<List<ClueEntry>> clearList = (list) =>
+        {
+            foreach (var entry in list.Where(e => !e.isConfirmedInHand))
+            {
+                entry.state = ClueState.None;
+            }
+        };
 
-        foreach (var row in rowLookup.Values) row.Refresh();
-        Save();
+        clearList(saveState.suspects);
+        clearList(saveState.weapons);
+        clearList(saveState.rooms);
+
+        foreach (var row in activeRows.Values)
+        {
+            row.Refresh();
+        }
+
+        SaveState();
         ShowToast("Cleared!");
     }
 
-    ClueEntry FindEntry(string cardName)
+    private ClueEntry GetEntryByName(string targetName)
     {
-        ClueEntry e;
-        e = data.suspects.Find(x => x.name == cardName); if (e != null) return e;
-        e = data.weapons .Find(x => x.name == cardName); if (e != null) return e;
-        e = data.rooms   .Find(x => x.name == cardName); if (e != null) return e;
-        return null;
+        return saveState.suspects.FirstOrDefault(x => x.name == targetName) ??
+               saveState.weapons.FirstOrDefault(x => x.name == targetName) ??
+               saveState.rooms.FirstOrDefault(x => x.name == targetName);
     }
 
-    void OnRowChanged() { }
+    private void OnRowInteracted() { }
 
-    void TogglePanel()
+    private void ToggleVisibility()
     {
-        if (notepadPanel) notepadPanel.SetActive(!notepadPanel.activeSelf);
+        if (notepadPanel)
+        {
+            notepadPanel.SetActive(!notepadPanel.activeSelf);
+        }
     }
 
-    Coroutine toastCoroutine;
-
-    void ShowToast(string msg)
+    private void ShowToast(string message)
     {
-        if (toastCoroutine != null) StopCoroutine(toastCoroutine);
-        toastCoroutine = StartCoroutine(ToastRoutine(msg));
+        if (activeToastRoutine != null) StopCoroutine(activeToastRoutine);
+        activeToastRoutine = StartCoroutine(ToastRoutine(message));
     }
 
-    IEnumerator ToastRoutine(string msg)
+    private IEnumerator ToastRoutine(string message)
     {
-        toastText.text = msg;
+        toastText.text = message;
         toastPanel.SetActive(true);
         yield return new WaitForSeconds(1.8f);
         toastPanel.SetActive(false);

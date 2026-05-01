@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3975fcfbc734774bb349614574cdfd2, type: 3}
   m_Name: Ballroom
   m_EditorClassIdentifier: Assembly-CSharp::CardData
-  Type: 2
   CardName: Ballroom
+  Type: 2
   CardImage: {fileID: 8474061216575559967, guid: fff8d3014ee912c45bd0aa1637c34b72, type: 3}
+  BoardSprite: {fileID: 1009743701075135532, guid: a83791449d4b73141a254569838db593, type: 3}

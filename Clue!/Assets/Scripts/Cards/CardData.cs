@@ -1,18 +1,19 @@
 using UnityEngine;
 
-// object data container for suspects, weapons and rooms 
-[CreateAssetMenu(fileName = "New Card", menuName = "Cluedo/Card Data")]
+// all the card data took long time to make this
+[CreateAssetMenu(fileName = "NewCard", menuName = "Cluedo/CardData")]
 public class CardData : ScriptableObject
 {
-    public enum CardType
-    {
-        Suspect,
-        Weapon,
-        Room
-    }
+    public enum CardType { Suspect, Weapon, Room }
 
-    [Header("Card Properties")]
-    public CardType Type;
+    [Header("General Info")]
     public string CardName;
+    public CardType Type;
+
+    [Header("Visuals")]
+    [Tooltip("vertical art for UI, Hands, and Env.")]
     public Sprite CardImage;
+
+    [Tooltip("gameboard pngs")]
+    public Sprite BoardSprite;
 }
