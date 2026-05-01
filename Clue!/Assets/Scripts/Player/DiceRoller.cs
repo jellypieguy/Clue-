@@ -56,6 +56,8 @@ public class DiceRoller : MonoBehaviour
 
         if (_rolling) return;
 
+        AudioManager.Instance?.PlayDiceRoll();
+
         int d1 = UnityEngine.Random.Range(1, 7);
         int d2 = UnityEngine.Random.Range(1, 7);
         int total = d1 + d2;

@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Linq;
 
-// player roster and controls turns
 public class TurnManager : MonoBehaviour
 {
     public static TurnManager Instance { get; private set; }
@@ -26,7 +26,6 @@ public class TurnManager : MonoBehaviour
         }
     }
 
-    // fires when the active player change
     public event Action<PlayerController> OnPlayerTurnChanged;
 
     public PlayerController CurrentPlayer => _playersInGame.Count > 0 && _currentPlayerIndex >= 0 ? _playersInGame[_currentPlayerIndex] : null;
@@ -45,10 +44,15 @@ public class TurnManager : MonoBehaviour
 
     private void HandleTurnIndexChanged(int oldIndex, int newIndex)
     {
-        if (CurrentPlayer != null)
+        if (CurrentPlayer == null) return;
+
+        Debug.Log($"Turn → {CurrentPlayer.Character}");
+        OnPlayerTurnChanged?.Invoke(CurrentPlayer);
+
+        if (!CurrentPlayer.IsHuman && AIChatBrain.Instance != null)
         {
-            Debug.Log($"Turn passed to {CurrentPlayer.Character}.");
-            OnPlayerTurnChanged?.Invoke(CurrentPlayer);
+            var character = (AIChatBrain.Character)(int)CurrentPlayer.Character;
+            AIChatBrain.Instance.TriggerAILine(character, "TurnStart");
         }
     }
 
@@ -64,17 +68,14 @@ public class TurnManager : MonoBehaviour
             GameManager.Instance.OnGameStateChanged -= HandleGameStateChanged;
     }
 
-    // adds a player to the roster 
     public void RegisterPlayer(PlayerController player)
     {
         if (!_playersInGame.Contains(player))
             _playersInGame.Add(player);
     }
 
-    // ccall this before first turn so skipped players are hidden from the board
     public void ApplyPlayerSettings(int totalPlayers, int humanCount)
     {
-        // Remove any extra players from the back of the list and hide their tokens.
         while (_playersInGame.Count > totalPlayers)
         {
             PlayerController extra = _playersInGame[_playersInGame.Count - 1];
@@ -82,12 +83,10 @@ public class TurnManager : MonoBehaviour
             extra.gameObject.SetActive(false);
         }
 
-        // sets player as human orbot based on their position
         for (int i = 0; i < _playersInGame.Count; i++)
             _playersInGame[i].IsHuman = (i < humanCount);
     }
 
-    // spawn points
     public void StartFirstTurn()
     {
         if (_playersInGame.Count == 0)
@@ -125,38 +124,39 @@ public class TurnManager : MonoBehaviour
             PassTurnToNextPlayer();
     }
 
-    // advance to the next player if not elim
-    
     private void PassTurnToNextPlayer()
     {
         if (_playersInGame.Count == 0) return;
 
-        if (CurrentPlayer != null) CurrentPlayer.ClearReachableHighlights(); // Clear OLD player highlights
+        CurrentPlayer?.ClearReachableHighlights();
 
-        int originalIndex = _currentPlayerIndex;
-        bool foundActivePlayer = false;
+        // Search without touching _currentPlayerIndex until we've confirmed a valid target —
+        // the setter fires HandleTurnIndexChanged, so mutating it mid-search would spam events
+        // for every eliminated player we skip over.
+        int start = _currentPlayerIndex;
+        int found = -1;
 
-        do
+        for (int i = 1; i <= _playersInGame.Count; i++)
         {
-            int nextIndex = (_currentPlayerIndex + 1) % _playersInGame.Count;
-            _currentPlayerIndex = nextIndex;
-
-            if (!CurrentPlayer.IsEliminated)
+            int candidate = (start + i) % _playersInGame.Count;
+            if (!_playersInGame[candidate].IsEliminated)
             {
-                foundActivePlayer = true;
+                found = candidate;
                 break;
             }
-        } while (_currentPlayerIndex != originalIndex);
+        }
 
-        if (!foundActivePlayer)
+        if (found == -1)
         {
-            Debug.LogError("ALL PLAYERS ELIMINATED! The murderer got away with it!");
+            Debug.LogError("Everyone's dead. The murderer wins by default.");
             GameManager.Instance.ChangeState(GameManager.GameState.GameOver);
             return;
         }
 
-        Debug.Log($"TurnManager: Turn passed to {CurrentPlayer.Character}.");
-        // Defer by one frame so we exit the EndTurn event chain before firing WaitingForRoll
+        // Setter fires exactly once for the real next player
+        _currentPlayerIndex = found;
+
+        // Defer by one frame so we're clear of the EndTurn event chain before firing WaitingForRoll
         StartCoroutine(BeginNextTurn());
     }
     private IEnumerator BeginNextTurn()

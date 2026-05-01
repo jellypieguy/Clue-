@@ -64,6 +64,12 @@ public class UIManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI passDeviceText;
     [SerializeField] private Button passDeviceContinueButton;
 
+    [Header("Refuter Panel")]
+    [SerializeField] private GameObject refuterPanel;
+    [SerializeField] private TextMeshProUGUI refuterPromptText;
+    [SerializeField] private Transform refuterCardContainer;
+    [SerializeField] private GameObject refuterCardButtonPrefab;
+
     [Header("Player Hand")]
     [SerializeField] private Transform handContainer;
     [SerializeField] private GameObject cardPrefab;
@@ -102,6 +108,7 @@ public class UIManager : MonoBehaviour
         TogglePanel(suggestionPanel, false);
         TogglePanel(accusationPanel, false);
         TogglePanel(cardRevealPanel, false);
+        TogglePanel(refuterPanel, false);
         TogglePanel(murderRevealPanel, false);
         TogglePanel(gameOverPanel, false);
         TogglePanel(pausePanel, false);
@@ -225,10 +232,14 @@ public class UIManager : MonoBehaviour
             suggestButton.interactable = isHumanTurn && state == GameManager.GameState.Suggesting;
 
         if (accuseButton != null)
-            accuseButton.interactable = isHumanTurn && state != GameManager.GameState.Setup && state != GameManager.GameState.GameOver;
+            accuseButton.interactable = isHumanTurn
+                && (state == GameManager.GameState.WaitingForRoll
+                 || state == GameManager.GameState.Suggesting);
 
         if (endTurnButton != null)
-            endTurnButton.interactable = isHumanTurn && state == GameManager.GameState.Suggesting;
+            endTurnButton.interactable = isHumanTurn
+                && (state == GameManager.GameState.Suggesting
+                 || state == GameManager.GameState.Moving);
     }
 
     private void OnRollDiceClicked()
@@ -293,19 +304,24 @@ public class UIManager : MonoBehaviour
 
     private void OnCardRevealDismissed()
     {
+        if (cardRevealImage != null) cardRevealImage.gameObject.SetActive(true); // restore in case ShowNobodyDisproved hid it
         TogglePanel(cardRevealPanel, false);
-        if (GameManager.Instance != null) GameManager.Instance.ChangeState(GameManager.GameState.EndTurn);
+
+        // Don't end the turn if the player is still in Suggesting — they might want to accuse
+        if (GameManager.Instance != null && GameManager.Instance.CurrentState != GameManager.GameState.Suggesting)
+            GameManager.Instance.ChangeState(GameManager.GameState.EndTurn);
     }
 
     private void OnMurderRevealContinue()
     {
         TogglePanel(murderRevealPanel, false);
-        ShowGameOver(null);
+        ShowGameOver(GameManager.Instance?.PendingWinner);
     }
 
     private void OnReplayClicked()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        Time.timeScale = 1f; // un-pause if we died while paused
+        SceneManager.LoadScene(0); // back to menu — cleaner reset than reloading mid-game
     }
 
     private void OnPassDeviceContinue()
@@ -324,6 +340,51 @@ public class UIManager : MonoBehaviour
     private void TogglePanel(GameObject panel, bool isVisible)
     {
         if (panel != null) panel.SetActive(isVisible);
+    }
+
+    // Called by SuggestionSystem when a human player needs to pick which card to show
+    public void ShowRefuterPicker(List<CardData> choices, System.Action<CardData> onPicked)
+    {
+        if (refuterPanel == null || refuterCardContainer == null || refuterCardButtonPrefab == null)
+        {
+            // Panel not set up in Inspector yet — just auto-pick the first card so the game doesn't hang
+            onPicked(choices[0]);
+            return;
+        }
+
+        foreach (Transform child in refuterCardContainer)
+            Destroy(child.gameObject);
+
+        if (refuterPromptText != null)
+            refuterPromptText.text = "You can disprove this! Pick a card to show:";
+
+        foreach (var card in choices)
+        {
+            var btn = Instantiate(refuterCardButtonPrefab, refuterCardContainer);
+            var label = btn.GetComponentInChildren<TextMeshProUGUI>();
+            if (label != null) label.text = card.CardName;
+
+            var captured = card; // don't close over loop var
+            btn.GetComponent<Button>().onClick.AddListener(() =>
+            {
+                TogglePanel(refuterPanel, false);
+                onPicked(captured);
+            });
+        }
+
+        TogglePanel(refuterPanel, true);
+    }
+
+    public void ShowNobodyDisproved()
+    {
+        if (cardRevealText != null)
+            cardRevealText.text = "Nobody could disprove the suggestion...\nCould this be the answer?";
+
+        // Hide the card image — there's nothing to show
+        if (cardRevealImage != null)
+            cardRevealImage.gameObject.SetActive(false);
+
+        TogglePanel(cardRevealPanel, true);
     }
 
     private void UpdateHandDisplay(PlayerController player)

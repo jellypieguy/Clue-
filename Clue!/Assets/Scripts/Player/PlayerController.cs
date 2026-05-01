@@ -197,6 +197,8 @@ public class PlayerController : MonoBehaviour
         _isMoving = true;
         _currentTile = targetTile;
 
+        AudioManager.Instance?.PlayFootstep();
+
         Vector3 startPos = transform.position;
         Vector3 targetPos = targetTile.transform.position;
         float elapsed = 0f;

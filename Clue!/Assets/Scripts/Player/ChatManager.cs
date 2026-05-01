@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using TMPro;
 using UnityEngine.UI;
 
@@ -21,7 +22,8 @@ public class ClueChatManager : MonoBehaviour
     private void Update()
     {
         // enter to text
-        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        var kb = Keyboard.current;
+        if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame))
         {
             if (chatInputField.isFocused && !string.IsNullOrWhiteSpace(chatInputField.text))
             {
