@@ -103,10 +103,10 @@ TextureImporter:
       name: lounge__0
       rect:
         serializedVersion: 2
-        x: 80
-        y: 141
-        width: 426
-        height: 343
+        x: 0
+        y: 0
+        width: 411
+        height: 328
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

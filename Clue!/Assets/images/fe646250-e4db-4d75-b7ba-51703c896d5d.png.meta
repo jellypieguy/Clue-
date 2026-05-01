@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 551f33990a1b8c8478fb4014d23d78f8
+guid: 79b80e7e9825af945b4c2edd1e21a099
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5801470240615431807
-    second: conservatorty__0
+      213: -2814477095329788320
+    second: fe646250-e4db-4d75-b7ba-51703c896d5d_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: conservatorty__0
+      name: fe646250-e4db-4d75-b7ba-51703c896d5d_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 358
-        height: 293
+        width: 1677
+        height: 938
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1810e1dbd890d7fa0800000000000000
-      internalID: -5801470240615431807
+      spriteID: 06e05685ef7f0f8d0800000000000000
+      internalID: -2814477095329788320
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      conservatorty__0: -5801470240615431807
+      fe646250-e4db-4d75-b7ba-51703c896d5d_0: -2814477095329788320
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

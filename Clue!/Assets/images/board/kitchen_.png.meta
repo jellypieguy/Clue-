@@ -103,10 +103,10 @@ TextureImporter:
       name: kitchen__0
       rect:
         serializedVersion: 2
-        x: 101
-        y: 106
-        width: 371
-        height: 351
+        x: 0
+        y: 0
+        width: 364
+        height: 344
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
