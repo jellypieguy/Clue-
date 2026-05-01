@@ -97,7 +97,7 @@ public class DetectiveNotepad : MonoBehaviour
         notepadPanel?.SetActive(false);
     }
 
-    public void MarkConfirmedHandCard(string cardName)
+    public void AutoMarkCard(string cardName)
     {
         var entry = GetEntryByName(cardName);
         if (entry == null)
