@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3975fcfbc734774bb349614574cdfd2, type: 3}
   m_Name: Study
   m_EditorClassIdentifier: Assembly-CSharp::CardData
-  Type: 2
   CardName: Study
+  Type: 2
   CardImage: {fileID: -3056259800998472206, guid: d80405eb3b015d24a864aa83c0d95c4f, type: 3}
+  BoardSprite: {fileID: 5748497105109156375, guid: ded24c262cf0a584ba3b6eb6aa22dc70, type: 3}

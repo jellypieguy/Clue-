@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3975fcfbc734774bb349614574cdfd2, type: 3}
   m_Name: Dining Room
   m_EditorClassIdentifier: Assembly-CSharp::CardData
-  Type: 2
   CardName: Dining Room
+  Type: 2
   CardImage: {fileID: -3850659085453982625, guid: d9a76a272d752a443b7679d1e73d5b59, type: 3}
+  BoardSprite: {fileID: 21300000, guid: c1c6748e9f1fe0445b0608bf88dce20e, type: 3}

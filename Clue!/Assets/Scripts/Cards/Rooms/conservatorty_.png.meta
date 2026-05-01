@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: af688c0e96951dd4cbbac2d0c0131f70
+guid: 551f33990a1b8c8478fb4014d23d78f8
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -103,10 +103,10 @@ TextureImporter:
       name: conservatorty__0
       rect:
         serializedVersion: 2
-        x: 106
-        y: 125
-        width: 366
-        height: 301
+        x: 0
+        y: 0
+        width: 358
+        height: 293
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

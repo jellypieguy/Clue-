@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: e1771f0316416d245a1df72d46b22efd
+guid: ace3079918a36da47a725209134269b9
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -103,10 +103,10 @@ TextureImporter:
       name: kitchen__0
       rect:
         serializedVersion: 2
-        x: 101
-        y: 106
-        width: 371
-        height: 351
+        x: 0
+        y: 0
+        width: 364
+        height: 344
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 4163b65fd3de40744a91af957fdd71ad
+guid: 1bdb9a3e8e266ba4ab9c343e24cb1586
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -37,7 +37,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -103,10 +103,10 @@ TextureImporter:
       name: lounge__0
       rect:
         serializedVersion: 2
-        x: 80
-        y: 141
-        width: 426
-        height: 343
+        x: 0
+        y: 0
+        width: 411
+        height: 328
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}

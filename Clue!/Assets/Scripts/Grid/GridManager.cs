@@ -22,29 +22,22 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Sprite cellarSprite;
     [SerializeField] private Sprite spawnSprite;
 
-    [Header("Board Image")]
-    [SerializeField] private Sprite boardImage;
-
     [Header("Room Card Data")]
     [Tooltip("0=Conservatory 1=Ballroom 2=Kitchen 3=DiningRoom 4=BilliardRoom 5=Library 6=Lounge 7=Hall 8=Study")]
     [SerializeField] private CardData[] roomCards = new CardData[9];
 
-    [Header("Room Images (same order as Room Cards)")]
-    [Tooltip("0=Conservatory 1=Ballroom 2=Kitchen 3=DiningRoom 4=BilliardRoom 5=Library 6=Lounge 7=Hall 8=Study")]
-    [SerializeField] private Sprite[] roomImages = new Sprite[9];
-
-    // boxes for rooms nocollide. format: xMin, xMax, yMin, yMax.
+    //  boxes for rooms nocollide
     private static readonly int[,] RoomRegions = new int[9, 4]
     {
-        {  0,    5,    0,    4 },  // 0: Conservatory (Bottom Left)
-        {  10,   15,   0,    5 },  // 1: Ballroom (Bottom Center)
-        {  18,   23,   0,    5 },  // 2: Kitchen (Bottom Right)
-        {  17,   23,   10,   16 }, // 3: Dining Room (Middle Right)
-        {  0,    5,    7,    10 }, // 4: Billiard Room (Middle Left Lower)
-        {  0,    6,    13,   16 }, // 5: Library (Middle Left Upper)
-        {  17,   23,   19,   24 }, // 6: Lounge (Top Right)
-        {  9,    14,   18,   24 }, // 7: Hall (Top Center)
-        {  0,    6,   21,   24 },  // 8: Study (Top Left)
+        {  0,    5,    0,    4 },  // 0: Conservatory (Bottom Left - Fit was already perfect)
+        {  8,    15,   -1,    5 },  // 1: Ballroom (Expanded outward to fill the massive black gaps)
+        {  18,   23,   0,    6 },  // 2: Kitchen (Expanded to touch the hallway)
+        {  16,   23,   8,    14 }, // 3: Dining Room (Expanded left to touch the hallway)
+        {  0,    5,    7,    11 }, // 4: Billiard Room (Adjusted height to fill void)
+        {  0,    6,    13,   17 }, // 5: Library (Expanded right to touch the hallway)
+        {  17,   23,   18,   23 }, // 6: Lounge (Moved down exactly 1 tile)
+        {  9,    14,   15,   24 }, // 7: Hall (Moved down exactly 1 tile)
+        {  0,    6,    20,   23 }, // 8: Study (Moved down exactly 1 tile)
     };
 
     private Tile[,] grid;
@@ -59,6 +52,7 @@ public class GridManager : MonoBehaviour
         }
         Instance = this;
 
+        // Prep bounds early so the camera doesn't freak out on Start
         CalculateDimensions();
         GenerateGrid();
     }
@@ -95,33 +89,15 @@ public class GridManager : MonoBehaviour
         float startX = (-GridWidth / 2f + 0.5f) * tileSize;
         float startY = (-GridHeight / 2f + 0.5f) * tileSize;
 
-        // Board background image or base layer
-        GameObject boardBase = new("BoardBackground");
-        boardBase.transform.SetParent(transform);
-        boardBase.transform.localPosition = new(0, 0, 0.5f);
-        SpriteRenderer baseSR = boardBase.AddComponent<SpriteRenderer>();
-        baseSR.sortingOrder = 2;
+        Sprite tileSprite = null;
+        if (tilePrefab != null)
+        {
+            var sr = tilePrefab.GetComponent<SpriteRenderer>();
+            if (sr != null) tileSprite = sr.sprite;
+        }
 
-        if (boardImage != null)
-        {
-            baseSR.sprite = boardImage;
-            baseSR.color = Color.white;
-            float spriteW = boardImage.bounds.size.x;
-            float spriteH = boardImage.bounds.size.y;
-            boardBase.transform.localScale = new Vector3(
-                (GridWidth / spriteW) * 1.21f,
-                (GridHeight / spriteH) * 1.21f,
-                1f
-            );
-        }
-        else
-        {
-            SpriteRenderer prefabSR = tilePrefab != null ? tilePrefab.GetComponent<SpriteRenderer>() : null;
-            baseSR.sprite = prefabSR != null ? prefabSR.sprite : null;
-            baseSR.color = new Color(0.05f, 0.05f, 0.05f);
-            baseSR.drawMode = SpriteDrawMode.Simple;
-            boardBase.transform.localScale = new(GridWidth + 1f, GridHeight + 1f, 1);
-        }
+        CreateBackgroundLayer("BoardBackground", tileSprite, new Color(0.05f, 0.05f, 0.05f), 0.5f, GridWidth + 1f, GridHeight + 1f);
+        CreateBackgroundLayer("BlackBorders", tileSprite, Color.black, 0.25f, GridWidth, GridHeight);
 
         for (int x = 0; x < GridWidth; x++)
         {
@@ -129,8 +105,6 @@ public class GridManager : MonoBehaviour
             {
                 var spawnedTile = Instantiate(tilePrefab, transform);
                 spawnedTile.transform.localPosition = new Vector3(startX + x * tileSize, startY + y * tileSize, 0);
-
-                // No visual gaps between grid tiles
                 spawnedTile.transform.localScale = new Vector3(1f * tileSize, 1f * tileSize, 1f);
 
                 char rawChar = ' ';
@@ -148,11 +122,18 @@ public class GridManager : MonoBehaviour
                     Tile.TileType.Door => doorSprite,
                     Tile.TileType.Wall => wallSprite,
                     Tile.TileType.Cellar => cellarSprite,
-                    Tile.TileType.SecretPassage => hallwaySprite,
                     _ => null
                 };
 
                 spawnedTile.Setup(x, y, parsedType, rawChar, typeSprite);
+
+                // --- THE TILE OVERLAP FIX ---
+                // Forces Unity to draw top-left tiles first, and bottom-right tiles last.
+                // Keeps them in negative numbers so Room Images and Text render above them safely.
+                if (spawnedTile.TryGetComponent<SpriteRenderer>(out var tileSr))
+                {
+                    tileSr.sortingOrder = -1000 + (y * 10) - x;
+                }
 
                 if (char.IsDigit(rawChar))
                 {
@@ -169,8 +150,24 @@ public class GridManager : MonoBehaviour
         AssignRoomData();
         AssignDoorRoomData();
         AssignSecretPassages();
-        AddRoomImagesAndLabels();
+        AddRoomLabels();
+        AddRoomImages();
         ApplyGameSettings();
+    }
+
+    private void CreateBackgroundLayer(string layerName, Sprite sprite, Color color, float zOffset, float scaleX, float scaleY)
+    {
+        var bg = new GameObject(layerName);
+        bg.transform.SetParent(transform);
+        bg.transform.localPosition = new Vector3(0, 0, zOffset);
+
+        var sr = bg.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.color = color;
+        sr.drawMode = SpriteDrawMode.Simple;
+        sr.sortingOrder = -2000; // <--- THE FIX: Background is now firmly behind everything.
+
+        bg.transform.localScale = new Vector3(scaleX * tileSize, scaleY * tileSize, 1);
     }
 
     private void AssignRoomData()
@@ -226,7 +223,7 @@ public class GridManager : MonoBehaviour
         return null;
     }
 
-    private void AddRoomImagesAndLabels()
+    private void AddRoomLabels()
     {
         if (roomCards == null) return;
 
@@ -240,32 +237,8 @@ public class GridManager : MonoBehaviour
 
             float cx = (RoomRegions[i, 0] + RoomRegions[i, 1]) * 0.5f;
             float cy = (RoomRegions[i, 2] + RoomRegions[i, 3]) * 0.5f;
-            float roomW = RoomRegions[i, 1] - RoomRegions[i, 0];
-            float roomH = RoomRegions[i, 3] - RoomRegions[i, 2];
 
-            // Room background image
-            if (roomImages != null && i < roomImages.Length && roomImages[i] != null)
-            {
-                GameObject imgObj = new($"RoomImage_{card.CardName}");
-                imgObj.transform.SetParent(transform);
-                imgObj.transform.position = new Vector3(startX + cx * tileSize, startY + cy * tileSize, 0.05f);
-
-                SpriteRenderer sr = imgObj.AddComponent<SpriteRenderer>();
-                sr.sprite = roomImages[i];
-                sr.color = Color.white;
-                sr.sortingOrder = 1;
-
-                float spriteW = sr.sprite.bounds.size.x;
-                float spriteH = sr.sprite.bounds.size.y;
-                imgObj.transform.localScale = new Vector3(
-                    ((roomW + 1f) * tileSize) / spriteW,
-                    ((roomH + 1f) * tileSize) / spriteH,
-                    1f
-                );
-            }
-
-            // Room name label
-            GameObject go = new($"Label_{card.CardName}");
+            var go = new GameObject($"Label_{card.CardName}");
             go.transform.SetParent(transform);
             go.transform.position = new Vector3(startX + cx * tileSize, startY + cy * tileSize, -0.05f);
 
@@ -274,10 +247,51 @@ public class GridManager : MonoBehaviour
             tmp.fontSize = 2.4f * tileSize;
             tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = new Color(1f, 1f, 1f, 0.85f);
+            tmp.color = new Color(0f, 0f, 0f, 0.60f);
             tmp.rectTransform.sizeDelta = new Vector2(5f * tileSize, 3f * tileSize);
 
             if (go.TryGetComponent<MeshRenderer>(out var mr)) mr.sortingOrder = 6;
+        }
+    }
+
+    private void AddRoomImages()
+    {
+        if (roomCards == null) return;
+
+        float startX = (-GridWidth / 2f + 0.5f) * tileSize;
+        float startY = (-GridHeight / 2f + 0.5f) * tileSize;
+
+        for (int i = 0; i < 9 && i < roomCards.Length; i++)
+        {
+            var card = roomCards[i];
+
+            if (card == null || card.BoardSprite == null) continue;
+
+            if (GameSettings.Instance != null && GameSettings.Instance.IsRoomDisabled(card)) continue;
+
+            float cx = (RoomRegions[i, 0] + RoomRegions[i, 1]) * 0.5f;
+            float cy = (RoomRegions[i, 2] + RoomRegions[i, 3]) * 0.5f;
+
+            var go = new GameObject($"RoomGraphic_{card.CardName}");
+            go.transform.SetParent(transform);
+            go.transform.position = new Vector3(startX + cx * tileSize, startY + cy * tileSize, 0.1f);
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = card.BoardSprite;
+            sr.sortingOrder = 3;
+
+            float roomWidthTiles = (RoomRegions[i, 1] - RoomRegions[i, 0] + 1);
+            float roomHeightTiles = (RoomRegions[i, 3] - RoomRegions[i, 2] + 1);
+
+            float spriteWidth = sr.sprite.bounds.size.x;
+            float spriteHeight = sr.sprite.bounds.size.y;
+
+            if (spriteWidth > 0 && spriteHeight > 0)
+            {
+                float targetScaleX = (roomWidthTiles * tileSize) / spriteWidth;
+                float targetScaleY = (roomHeightTiles * tileSize) / spriteHeight;
+                go.transform.localScale = new Vector3(targetScaleX, targetScaleY, 1f);
+            }
         }
     }
 
@@ -285,7 +299,6 @@ public class GridManager : MonoBehaviour
     {
         if (roomCards == null || roomCards.Length < 9) return;
 
-        // 0=Conservatory, 2=Kitchen, 6=Lounge, 8=Study
         var pairs = new[,] { { 2, 8 }, { 8, 2 }, { 0, 6 }, { 6, 0 } };
 
         for (int x = 0; x < GridWidth; x++)
@@ -293,26 +306,13 @@ public class GridManager : MonoBehaviour
             for (int y = 0; y < GridHeight; y++)
             {
                 var t = grid[x, y];
-                if (t == null || t.Type != Tile.TileType.SecretPassage) continue;
+                if (t == null || t.RoomData == null) continue;
 
-                // Find which room region this secret passage tile is inside
-                for (int i = 0; i < 9; i++)
+                for (int p = 0; p < pairs.GetLength(0); p++)
                 {
-                    int xMin = RoomRegions[i, 0], xMax = RoomRegions[i, 1];
-                    int yMin = RoomRegions[i, 2], yMax = RoomRegions[i, 3];
-
-                    if (x >= xMin && x <= xMax && y >= yMin && y <= yMax)
+                    if (t.RoomData == roomCards[pairs[p, 0]])
                     {
-                        t.SetRoomData(roomCards[i]);
-
-                        for (int p = 0; p < pairs.GetLength(0); p++)
-                        {
-                            if (pairs[p, 0] == i)
-                            {
-                                t.SecretPassageDestination = roomCards[pairs[p, 1]];
-                                break;
-                            }
-                        }
+                        t.SecretPassageDestination = roomCards[pairs[p, 1]];
                         break;
                     }
                 }
@@ -347,9 +347,6 @@ public class GridManager : MonoBehaviour
             return Tile.TileType.Invalid;
 
         char c = char.ToUpper(lines[invertedY][x]);
-
-        // Check S before digit so secret passages are not misread as spawns
-        if (c == 'S') return Tile.TileType.SecretPassage;
         if (char.IsDigit(c)) return Tile.TileType.Spawn;
 
         switch (c)
@@ -366,6 +363,8 @@ public class GridManager : MonoBehaviour
                 return Tile.TileType.Cellar;
             case 'H':
                 return Tile.TileType.Hallway;
+            case 'S':
+                return Tile.TileType.SecretPassage;
             default:
                 return Tile.TileType.Invalid;
         }
@@ -394,7 +393,7 @@ public class GridManager : MonoBehaviour
                     canEnter = true;
                     break;
                 case Tile.TileType.Room:
-                    canEnter = current.Type == Tile.TileType.Door || current.Type == Tile.TileType.Room || current.Type == Tile.TileType.SecretPassage;
+                    canEnter = current.Type == Tile.TileType.Door || current.Type == Tile.TileType.Room;
                     break;
             }
 

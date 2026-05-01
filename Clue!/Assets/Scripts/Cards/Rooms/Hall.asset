@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a3975fcfbc734774bb349614574cdfd2, type: 3}
   m_Name: Hall
   m_EditorClassIdentifier: Assembly-CSharp::CardData
-  Type: 2
   CardName: Hall
+  Type: 2
   CardImage: {fileID: -3043249968972955321, guid: 51e5f874bedf25843a06d98feeaf52d0, type: 3}
+  BoardSprite: {fileID: 6405895947068686432, guid: 8628c94cf9e2a5f41b8f00a297e6db1b, type: 3}
